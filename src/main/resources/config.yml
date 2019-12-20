@@ -1,0 +1,69 @@
+# --- MongoDB ---
+MongoDB: false
+
+MongoDBUri: ""
+Database: reportsystem
+OpenReportCollection: openreports
+CloseReportCollection: closereports
+
+# --- Messages ---
+
+Prefix: "&8» &6ReportSystem &8| &7"
+NoPermission: "&cYou have insufficient permissions to execute this command."
+
+ReportSuccess: "&aYou successfully reported &e%target%&a. Thank you!"
+ReportCooldown: "&cPlease wait a moment before you report the next player."
+ReportNotification: "&aA new report is available."
+TakeReport: "&aYou successfully accepted the report."
+CompleteReport: "&aYou successfully closed this report."
+DeleteReport: "&cYou successfully deleted this report."
+NotExists: "&cThis report does not exist."
+JoinMessage: "&7There are &e%count% &7reports open."
+
+Usage:
+  ReportCommand: "&7Usage: &e/report <Player> <Reason>"
+
+# --- Forms ---
+
+Title:
+  Panel: "Report Panel"
+  OpenReports: "Opened reports"
+  MyReports: "My reports"
+  SearchReport: "Search report"
+
+Text:
+  Panel: "In the panel you can easily manage all reports."
+  OpenReports: "These are all open reports that have not yet been processed. Click on a report, get informations and manage it."
+  SeeReport: "&aAll informations about report &e%id%\n&6Reported player: &e%target%\n&6Creator: &e%creator%\n&6Reason: &e%reason%\n&6Date: &e%date%\n&6Status: &e%status%\n&6Manager: &e%manager%"
+  MyReports: "These are all the reports you manage. Click on a report to manage it further."
+  SearchReport: "Please provide a report id, to search a report."
+  DeleteReport: "Do you really want to delete this report? If you delete it, you won't be able to restore the report."
+  CloseReport: "Do you really want to close this report? If you close it, you can't open the report either."
+
+Buttons:
+  Back: "Back"
+  Panel:
+    Reports: "Opened reports"
+    MyReports: "My reports"
+    SearchReport: "Search report"
+    Close: "Close"
+  SeeReport:
+    TakeReport: "&aTake this report"
+    CloseReport: "&aClose this report"
+    DeleteReport: "&cDelete this report"
+  MyReports:
+    NoReports: "&cThere are no reports"
+  OpenedReports:
+    NoReports: "&cThere are no reports"
+  SearchReport:
+    Submit: "Submit"
+  ConfirmReport:
+    Delete: "&aDelete this report"
+    Close: "&aClose this report"
+
+# --- Other ---
+
+JoinNotification: true
+
+#Specify how long a player must wait to report a new player. (Seconds)
+Cooldown: 180
