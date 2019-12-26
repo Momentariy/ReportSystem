@@ -17,6 +17,8 @@ import net.llamadevelopment.reportsystem.managers.ReportManager;
 import net.llamadevelopment.reportsystem.utils.FormUiUtil;
 import org.bson.Document;
 
+import java.util.List;
+
 public class FormListener implements Listener {
 
     @EventHandler
@@ -74,22 +76,24 @@ public class FormListener implements Listener {
                     FormUiUtil.sendReportConfirmation(player, form.getTitle(), "delete");
                 }
             } else {
-                Document document = ReportSystem.getInstance().getOpenReportCollection().find(new Document("id", form.getTitle())).first();
-                if (document != null) {
-                    if (form.getResponse() == null) return;
-                    String response = form.getResponse().getClickedButton().getText();
-                    if (response.equalsIgnoreCase(config.getString("Buttons.SeeReport.TakeReport").replace("&", "§"))) {
-                        ReportManager.updateStatus(form.getTitle(), "In progress");
-                        ReportManager.updateManager(form.getTitle(), player.getName());
-                        player.sendMessage(config.getString("Prefix").replace("&", "§") + config.getString("TakeReport").replace("&", "§"));
-                        form.setResponse("");
-                    } else if (response.equalsIgnoreCase(config.getString("Buttons.Back").replace("&", "§"))) {
-                        FormUiUtil.sendReportPanel(player);
-                        form.setResponse("");
-                    } else if (response.equalsIgnoreCase(config.getString("Buttons.SeeReport.CloseReport").replace("&", "§"))) {
-                        FormUiUtil.sendReportConfirmation(player, form.getTitle(), "close");
-                    } else if (response.equalsIgnoreCase(config.getString("Buttons.SeeReport.DeleteReport").replace("&", "§"))) {
-                        FormUiUtil.sendReportConfirmation(player, form.getTitle(), "delete");
+                if (config.getBoolean("MongoDB")) {
+                    Document document = ReportSystem.getInstance().getOpenReportCollection().find(new Document("id", form.getTitle())).first();
+                    if (document != null) {
+                        if (form.getResponse() == null) return;
+                        String response = form.getResponse().getClickedButton().getText();
+                        if (response.equalsIgnoreCase(config.getString("Buttons.SeeReport.TakeReport").replace("&", "§"))) {
+                            ReportManager.updateStatus(form.getTitle(), "In progress");
+                            ReportManager.updateManager(form.getTitle(), player.getName());
+                            player.sendMessage(config.getString("Prefix").replace("&", "§") + config.getString("TakeReport").replace("&", "§"));
+                            form.setResponse("");
+                        } else if (response.equalsIgnoreCase(config.getString("Buttons.Back").replace("&", "§"))) {
+                            FormUiUtil.sendReportPanel(player);
+                            form.setResponse("");
+                        } else if (response.equalsIgnoreCase(config.getString("Buttons.SeeReport.CloseReport").replace("&", "§"))) {
+                            FormUiUtil.sendReportConfirmation(player, form.getTitle(), "close");
+                        } else if (response.equalsIgnoreCase(config.getString("Buttons.SeeReport.DeleteReport").replace("&", "§"))) {
+                            FormUiUtil.sendReportConfirmation(player, form.getTitle(), "delete");
+                        }
                     }
                 }
             }
