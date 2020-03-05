@@ -14,23 +14,6 @@ public abstract class CommandManager extends Command implements PluginIdentifiab
         this.plugin = plugin;
     }
 
-    public CommandManager(ReportSystem plugin, String name, String desc, String usage, String[] aliases) {
-        super(name, desc, usage, aliases);
-
-        this.plugin = plugin;
-    }
-
-    public CommandManager(ReportSystem plugin, Boolean override, String name, String desc, String usage, String[] aliases) {
-        super(name, desc, usage, aliases);
-
-        this.plugin = plugin;
-
-        CommandMap map = plugin.getServer().getCommandMap();
-        Command command = map.getCommand(name);
-        command.setLabel(name + "_disabled");
-        command.unregister(map);
-    }
-
     public ReportSystem getPlugin() {
         return plugin;
     }

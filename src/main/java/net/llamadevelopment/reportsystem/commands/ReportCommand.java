@@ -1,12 +1,10 @@
-//This file was created by Mundschutziii. 
-//You can change the code here, but do not sell this file as your own.
-
 package net.llamadevelopment.reportsystem.commands;
 
 import cn.nukkit.Player;
 import cn.nukkit.command.CommandSender;
 import net.llamadevelopment.reportsystem.ReportSystem;
-import net.llamadevelopment.reportsystem.managers.ReportManager;
+import net.llamadevelopment.reportsystem.components.managers.ReportManager;
+import net.llamadevelopment.reportsystem.components.messaging.Messages;
 
 public class ReportCommand extends CommandManager {
 
@@ -14,7 +12,7 @@ public class ReportCommand extends CommandManager {
     private ReportSystem plugin;
 
     public ReportCommand(ReportSystem plugin) {
-        super(plugin, "report", "Report a player.", "/report");
+        super(plugin, plugin.getConfig().getString("Commands.Report"), "Report a player.", "/report");
         this.plugin = plugin;
     }
 
@@ -27,19 +25,19 @@ public class ReportCommand extends CommandManager {
                     reason = reason + args[i] + " ";
                 }
                 if (ReportManager.cooldown.contains(sender)) {
-                    sender.sendMessage(plugin.getConfig().getString("Prefix").replace("&", "§") + plugin.getConfig().getString("ReportCooldown").replace("&", "§"));
+                    sender.sendMessage(Messages.getAndReplace("Messages.ReportCooldown"));
                     return true;
                 }
                 ReportManager.createReport(player, sender.getName(), reason, ReportManager.getID(), ReportManager.getDate());
-                sender.sendMessage(plugin.getConfig().getString("Prefix").replace("&", "§") + plugin.getConfig().getString("ReportSuccess").replace("&", "§").replace("%target%", player));
+                sender.sendMessage(Messages.getAndReplace("Messages.ReportSuccess", player));
                 ReportManager.cooldown.add((Player) sender);
                 ReportSystem.getInstance().getServer().getScheduler().scheduleDelayedTask(ReportSystem.getInstance(), new Runnable() {
                     public void run() {
                         ReportManager.cooldown.remove(sender);
                     }
-                }, plugin.getConfig().getInt("Cooldown") * 20);
+                }, plugin.getConfig().getInt("Settings.ReportCooldown") * 20);
             } else {
-                sender.sendMessage(plugin.getConfig().getString("Prefix").replace("&", "§") + plugin.getConfig().getString("Usage.ReportCommand").replace("&", "§"));
+                sender.sendMessage(Messages.getAndReplace("Usage.ReportCommand", plugin.getConfig().getString("Command.Report")));
             }
         }
         return false;

@@ -1,95 +1,83 @@
-//This file was created by Mundschutziii. 
-//You can change the code here, but do not sell this file as your own.
-
 package net.llamadevelopment.reportsystem;
 
 import cn.nukkit.command.CommandMap;
 import cn.nukkit.plugin.PluginBase;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import net.llamadevelopment.reportsystem.commands.ReportCommand;
 import net.llamadevelopment.reportsystem.commands.ReportmanagerCommand;
-import net.llamadevelopment.reportsystem.listeners.EventListener;
-import net.llamadevelopment.reportsystem.listeners.FormListener;
-import net.llamadevelopment.reportsystem.managers.ReportManager;
-import org.bson.Document;
+import net.llamadevelopment.reportsystem.components.managers.database.MongoDBProvider;
+import net.llamadevelopment.reportsystem.components.managers.database.MySqlProvider;
+import net.llamadevelopment.reportsystem.listener.EventListener;
+import net.llamadevelopment.reportsystem.listener.FormListener;
 
 public class ReportSystem extends PluginBase {
 
     private static ReportSystem instance;
-    private boolean error = false;
-
-    private MongoClient mongoClient;
-    private MongoDatabase mongoDatabase;
-    private MongoCollection<Document> openReportCollection, closeReportCollection;
-    public ReportManager reportManager;
+    private boolean mysql, mongodb, yaml = false;
+    private MySqlProvider mySql;
 
     @Override
     public void onEnable() {
-        getLogger().info("Starting ReportSystem...");
         instance = this;
-        getLogger().info("Loading all components...");
-        this.saveDefaultConfig();
+        System.out.println("");
+        System.out.println("  _____                       _    _____           _                 ");
+        System.out.println(" |  __ \\                     | |  / ____|         | |                ");
+        System.out.println(" | |__) |___ _ __   ___  _ __| |_| (___  _   _ ___| |_ ___ _ __ ___  ");
+        System.out.println(" |  _  // _ \\ '_ \\ / _ \\| '__| __|\\___ \\| | | / __| __/ _ \\ '_ ` _ \\ ");
+        System.out.println(" | | \\ \\  __/ |_) | (_) | |  | |_ ____) | |_| \\__ \\ ||  __/ | | | | |");
+        System.out.println(" |_|  \\_\\___| .__/ \\___/|_|   \\__|_____/ \\__, |___/\\__\\___|_| |_| |_|");
+        System.out.println("            | |                           __/ |                      ");
+        System.out.println("            |_|                          |___/                       ");
+        System.out.println("");
+        getLogger().info("§aStarting and loading all components...");
+        saveDefaultConfig();
         getServer().getPluginManager().registerEvents(new FormListener(), this);
         getServer().getPluginManager().registerEvents(new EventListener(), this);
-        registerCommands();
-        this.reportManager = new ReportManager();
-        if (getConfig().getBoolean("MongoDB")) {
+        getLogger().info("Components successfully loaded!");
+        if (getConfig().getString("Provider").equalsIgnoreCase("MongoDB")) {
+            mongodb = true;
             getLogger().info("Connecting to database...");
-            try {
-                MongoClientURI uri = new MongoClientURI(getConfig().getString("MongoDBUri"));
-                this.mongoClient = new MongoClient(uri);
-                this.mongoDatabase = mongoClient.getDatabase(getConfig().getString("Database"));
-                this.openReportCollection = mongoDatabase.getCollection(getConfig().getString("OpenReportCollection"));
-                this.closeReportCollection = mongoDatabase.getCollection(getConfig().getString("CloseReportCollection"));
-                getLogger().info("§aConnected successfully to database!");
-            } catch (Exception e) {
-                getLogger().error("§4Failed to connect to database.");
-                getLogger().error("§4Please check your details in the config.yml or check your mongodb database \"" + getConfig().getString("Database") + "\"");
-                error = true;
-                onDisable();
-            }
-        } else {
-            getLogger().info("Using config...");
+            MongoDBProvider.connect(this);
+        } else if (getConfig().getString("Provider").equalsIgnoreCase("MySql")) {
+            mysql = true;
+            getLogger().info("Connecting to database...");
+            this.mySql = new MySqlProvider();
+            this.mySql.createTables();
+        } else if (getConfig().getString("Provider").equalsIgnoreCase("Yaml")) {
+            yaml = true;
+            getLogger().info("Using YAML as provider...");
             saveResource("data/openreports.yml");
             saveResource("data/closereports.yml");
             getLogger().info("§aPlugin successfully started.");
+        } else {
+            getLogger().warning("§4§lFailed to load! Please specify a valid provider: MySql, MongoDB, Yaml");
         }
+        registerCommands();
     }
 
     private void registerCommands() {
         CommandMap map = getServer().getCommandMap();
-        map.register("report", new ReportCommand(this));
-        map.register("reportmanager", new ReportmanagerCommand(this));
+        map.register(getConfig().getString("Commands.Report"), new ReportCommand(this));
+        map.register(getConfig().getString("Commands.Reportmanager"), new ReportmanagerCommand(this));
     }
 
     @Override
     public void onDisable() {
         getLogger().info("Disabling ReportSystem...");
-        if (getConfig().getBoolean("MongoDB") && !error) {
-            mongoClient.close();
-        }
     }
 
     public static ReportSystem getInstance() {
         return instance;
     }
 
-    public MongoDatabase getMongoDatabase() {
-        return mongoDatabase;
+    public boolean isYaml() {
+        return yaml;
     }
 
-    public MongoClient getMongoClient() {
-        return mongoClient;
+    public boolean isMysql() {
+        return mysql;
     }
 
-    public MongoCollection<Document> getCloseReportCollection() {
-        return closeReportCollection;
-    }
-
-    public MongoCollection<Document> getOpenReportCollection() {
-        return openReportCollection;
+    public boolean isMongodb() {
+        return mongodb;
     }
 }

@@ -1,69 +1,81 @@
-# --- MongoDB ---
-MongoDB: false
+Provider: Yaml
+MySql:
+  Host: "127.0.0.1"
+  Port: "3306"
+  Database: "reportsystem"
+  User: "root"
+  Password: "cheesecake"
+MongoDB:
+  Uri: ""
+  Database: "reportsystem"
 
-MongoDBUri: ""
-Database: reportsystem
-OpenReportCollection: openreports
-CloseReportCollection: closereports
 
-# --- Messages ---
-
-Prefix: "&8» &6ReportSystem &8| &7"
-NoPermission: "&cYou have insufficient permissions to execute this command."
-
-ReportSuccess: "&aYou successfully reported &e%target%&a. Thank you!"
-ReportCooldown: "&cPlease wait a moment before you report the next player."
-ReportNotification: "&aA new report is available."
-TakeReport: "&aYou successfully accepted the report."
-CompleteReport: "&aYou successfully closed this report."
-DeleteReport: "&cYou successfully deleted this report."
-NotExists: "&cThis report does not exist."
-JoinMessage: "&7There are &e%count% &7reports open."
-
+Messages:
+  Prefix: "&8» &6ReportSystem &8| &7"
+  NoPermission: "&cYou have insufficient permissions to execute this command."
+  ReportSuccess: "&aYou successfully reported &e[0]&a. Thank you!"
+  ReportCooldown: "&cPlease wait a moment before you report the next player."
+  ReportNotification: "&aA new report is available."
+  TakeReport: "&aYou successfully accepted the report."
+  CompleteReport: "&aYou successfully closed this report."
+  DeleteReport: "&cYou successfully deleted this report."
+  NotExists: "&cThis report does not exist or it is already closed."
+  JoinMessage: "&7There are &e[0] &7reports open."
 Usage:
-  ReportCommand: "&7Usage: &e/report <Player> <Reason>"
-
-# --- Forms ---
+  ReportCommand: "&7Usage: &e/[0] <Player> <Reason>"
+Commands:
+  Report: report
+  Reportmanager: reportmanager
 
 Title:
   Panel: "Report Panel"
-  OpenReports: "Opened reports"
+  OpenReports: "All opened reports"
   MyReports: "My reports"
   SearchReport: "Search report"
-
+  SearchPlayer: "Search player"
+  SubOptions: "Available options"
+  OpenedReportsAgainst: "Available opened reports [Against]"
+  CloseddReportsAgainst: "Available closed reports [Against]"
+  OpenedReportsBy: "Available opened reports [By]"
+  ClosedReportsBy: "Available closed reports [By]"
 Text:
   Panel: "In the panel you can easily manage all reports."
   OpenReports: "These are all open reports that have not yet been processed. Click on a report, get informations and manage it."
   SeeReport: "&aAll informations about report &e%id%\n&6Reported player: &e%target%\n&6Creator: &e%creator%\n&6Reason: &e%reason%\n&6Date: &e%date%\n&6Status: &e%status%\n&6Manager: &e%manager%"
   MyReports: "These are all the reports you manage. Click on a report to manage it further."
   SearchReport: "Please provide a report id, to search a report."
+  SearchPlayer: "Please provide a player, to see the player's reports."
   DeleteReport: "Do you really want to delete this report? If you delete it, you won't be able to restore the report."
   CloseReport: "Do you really want to close this report? If you close it, you can't open the report either."
-
+  SubOptions: "Please choose one of this options to continue."
+  Info: "These are open or closed reports that you can view."
 Buttons:
   Back: "Back"
+  NoReports: "&cThere are no reports"
   Panel:
     Reports: "Opened reports"
     MyReports: "My reports"
     SearchReport: "Search report"
+    SearchPlayer: "Search player"
     Close: "Close"
   SeeReport:
     TakeReport: "&aTake this report"
     CloseReport: "&aClose this report"
     DeleteReport: "&cDelete this report"
-  MyReports:
-    NoReports: "&cThere are no reports"
-  OpenedReports:
-    NoReports: "&cThere are no reports"
   SearchReport:
     Submit: "Submit"
+  SearchPlayer:
+    Submit: "Submit"
+    OpenedReportsAgainst: "Opened reports against this player"
+    ClosedReportsAgainst: "Closed reports against this player"
+    OpenedReportsBy: "Opened reports by this player"
+    ClosedReportsBy: "Closed reports by this player"
   ConfirmReport:
-    Delete: "&aDelete this report"
+    Delete: "&cDelete this report"
     Close: "&aClose this report"
 
-# --- Other ---
+Settings:
+  JoinNotification: true
+  ReportCooldown: 180
 
-JoinNotification: true
-
-#Specify how long a player must wait to report a new player. (Seconds)
-Cooldown: 180
+ConfigVersion: 1
