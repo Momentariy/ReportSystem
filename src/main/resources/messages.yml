@@ -1,0 +1,78 @@
+#Standard ui icons made by Smashicons from www.flaticon.com
+# - - - System messages - - -
+
+prefix: "&8» &4Report &8| &7"
+no-permission: "&cYou have insufficient permissions to execute this command."
+
+report-success: "&aYou successfully reported &e[0]&a."
+already-reported: "&cYou have already reported &e[0]&c."
+report-usage: "Usage: &c/[0] <Player> <Reason>"
+report-took: "&aYou successfully took report &e[0]&a. You can manage it in your opened reports."
+report-not-found: "&cA report by this id was not found. This is not a system error."
+pending-reports-info: "There are currently &e[0] &7pending reports."
+report-closed: "&aYou successfully closed report &e[0]&a."
+report-deleted: "&aYou successfully deleted report &e[0]&a."
+no-myreports: "&cYou have not any reports."
+invalid-input: "&cPlease provide valid data."
+no-reports-found: "&cCould not find any reports."
+
+# - - - Form UI - - -
+
+back-button: "&8» &cBack"
+
+manager-title: "Report manager"
+manager-content: "Here you can manage all reports. Take a pending report and resolve it."
+manager-pendingreports: "&8» &9Pending reports &e[0]"
+manager-pendingreports-image: "https://image.flaticon.com/icons/png/512/148/148937.png"
+manager-myopenreports: "&8» &bMy open reports &e[0]"
+manager-myopenreports-image: "https://image.flaticon.com/icons/png/512/148/148985.png"
+manager-searchplayers: "&8» &ePlayer information"
+manager-searchplayers-image: "https://image.flaticon.com/icons/png/512/149/149020.png"
+manager-searchreport: "&8» &6Search reports"
+manager-searchreport-image: "https://image.flaticon.com/icons/png/512/148/148848.png"
+
+pending-title: "Pending reports"
+pending-content: ""
+pending-button: "&8» §e[0] \n&8[2]"
+
+pendingreport-title: "Report information"
+pendingreport-content: "&8» &9Report identification: &7[5]\n&8» &9Report created by: &7[0]\n&8» &9Reported player: &7[1]\n&8» &9Reason: &7[2]\n&8» &9Status: &7[3]\n&8» &9Member: &7[4]\n&8» &9Created at: &7[6]"
+pendingreport-take: "&8» &aTake report"
+pendingreport-take-image: "https://image.flaticon.com/icons/png/512/148/148767.png"
+
+progress-title: "Your pending reports"
+progress-content: ""
+progress-button: "&8» §e[0] \n&8[2]"
+
+progressreport-title: "Report information"
+progressreport-content: "&8» &9Report identification: &7[5]\n&8» &9Report created by: &7[0]\n&8» &9Reported player: &7[1]\n&8» &9Reason: &7[2]\n&8» &9Status: &7[3]\n&8» &9Member: &7[4]\n&8» &9Created at: &7[6]"
+progressreport-close: "&8» &aClose report"
+progressreport-close-image: "https://image.flaticon.com/icons/png/512/148/148903.png"
+progressreport-delete: "&8» &cDelete report"
+progressreport-delete-image: "https://image.flaticon.com/icons/png/512/148/148951.png"
+
+searchplayer-title: "Search a player"
+searchplayer-selectsearch: "Specify if you want to search for the player, target or report member."
+searchplayer-selectstatus: "Specify if you want to search for pending, progress or closed reports."
+searchplayer-player: "Provide the player."
+
+searchplayerresult-title: "Search result"
+searchplayerresult-content: ""
+searchplayerresult-button: "&8» §e[0] \n&8[2]"
+
+searchplayerreport-title: "Report information"
+searchplayerreport-content: "&8» &9Report identification: &7[5]\n&8» &9Report created by: &7[0]\n&8» &9Reported player: &7[1]\n&8» &9Reason: &7[2]\n&8» &9Status: &7[3]\n&8» &9Member: &7[4]\n&8» &9Created at: &7[6]"
+
+searchreport-title: "Search a report"
+searchreport-selectstatus: "Specify if you want to search for pending, progress or closed reports."
+searchreport-id: "Provide a report id."
+
+searchreportreport-title: "Report information"
+searchreportreport-content: "&8» &9Report identification: &7[5]\n&8» &9Report created by: &7[0]\n&8» &9Reported player: &7[1]\n&8» &9Reason: &7[2]\n&8» &9Status: &7[3]\n&8» &9Member: &7[4]\n&8» &9Created at: &7[6]"
+
+myreports-title: "Reports by me"
+myreports-content: ""
+myreports-button: "&8» §e[0] \n&8Status: [1]"
+
+myreportsreport-title: "Report information"
+myreportsreport-content: "&8» &9Report identification: &7[5]\n&8» &9Report created by: &7[0]\n&8» &9Reported player: &7[1]\n&8» &9Reason: &7[2]\n&8» &9Status: &7[3]\n&8» &9Member: &7[4]\n&8» &9Created at: &7[6]"

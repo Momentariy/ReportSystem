@@ -1,5 +1,5 @@
-name: ReportSystem
-version: 1.0-SNAPSHOT
+name: ReportSystemNK
+version: 2.0.0-SNAPSHOT
 api: 1.0.0
 author: Mundschutziii
 main: net.llamadevelopment.reportsystem.ReportSystem

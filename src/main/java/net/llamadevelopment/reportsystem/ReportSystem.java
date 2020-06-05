@@ -2,82 +2,68 @@ package net.llamadevelopment.reportsystem;
 
 import cn.nukkit.command.CommandMap;
 import cn.nukkit.plugin.PluginBase;
+import net.llamadevelopment.reportsystem.commands.MyreportsCommand;
 import net.llamadevelopment.reportsystem.commands.ReportCommand;
 import net.llamadevelopment.reportsystem.commands.ReportmanagerCommand;
-import net.llamadevelopment.reportsystem.components.managers.database.MongoDBProvider;
-import net.llamadevelopment.reportsystem.components.managers.database.MySqlProvider;
-import net.llamadevelopment.reportsystem.listener.EventListener;
-import net.llamadevelopment.reportsystem.listener.FormListener;
+import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
+import net.llamadevelopment.reportsystem.components.forms.FormListener;
+import net.llamadevelopment.reportsystem.components.managers.MongoDBProvider;
+import net.llamadevelopment.reportsystem.components.managers.MySqlProvider;
+import net.llamadevelopment.reportsystem.components.managers.YamlProvider;
+import net.llamadevelopment.reportsystem.components.managers.database.Provider;
+import net.llamadevelopment.reportsystem.components.tools.Language;
+import net.llamadevelopment.reportsystem.listeners.EventListener;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ReportSystem extends PluginBase {
 
     private static ReportSystem instance;
-    private boolean mysql, mongodb, yaml = false;
-    private MySqlProvider mySql;
+    public static Provider provider;
+    private static final Map<String, Provider> providers = new HashMap<>();
 
     @Override
     public void onEnable() {
         instance = this;
-        System.out.println("");
-        System.out.println("  _____                       _    _____           _                 ");
-        System.out.println(" |  __ \\                     | |  / ____|         | |                ");
-        System.out.println(" | |__) |___ _ __   ___  _ __| |_| (___  _   _ ___| |_ ___ _ __ ___  ");
-        System.out.println(" |  _  // _ \\ '_ \\ / _ \\| '__| __|\\___ \\| | | / __| __/ _ \\ '_ ` _ \\ ");
-        System.out.println(" | | \\ \\  __/ |_) | (_) | |  | |_ ____) | |_| \\__ \\ ||  __/ | | | | |");
-        System.out.println(" |_|  \\_\\___| .__/ \\___/|_|   \\__|_____/ \\__, |___/\\__\\___|_| |_| |_|");
-        System.out.println("            | |                           __/ |                      ");
-        System.out.println("            |_|                          |___/                       ");
-        System.out.println("");
-        getLogger().info("§aStarting and loading all components...");
         saveDefaultConfig();
-        getServer().getPluginManager().registerEvents(new FormListener(), this);
-        getServer().getPluginManager().registerEvents(new EventListener(), this);
-        getLogger().info("Components successfully loaded!");
-        if (getConfig().getString("Provider").equalsIgnoreCase("MongoDB")) {
-            mongodb = true;
-            getLogger().info("Connecting to database...");
-            MongoDBProvider.connect(this);
-        } else if (getConfig().getString("Provider").equalsIgnoreCase("MySql")) {
-            mysql = true;
-            getLogger().info("Connecting to database...");
-            this.mySql = new MySqlProvider();
-            this.mySql.createTables();
-        } else if (getConfig().getString("Provider").equalsIgnoreCase("Yaml")) {
-            yaml = true;
-            getLogger().info("Using YAML as provider...");
-            saveResource("data/openreports.yml");
-            saveResource("data/closereports.yml");
-            getLogger().info("§aPlugin successfully started.");
-        } else {
-            getLogger().warning("§4§lFailed to load! Please specify a valid provider: MySql, MongoDB, Yaml");
+        registerProvider(new MongoDBProvider());
+        registerProvider(new MySqlProvider());
+        registerProvider(new YamlProvider());
+        if (!providers.containsKey(getConfig().getString("Provider"))) {
+            getLogger().error("§4Please specify a valid provider: Yaml, MySql, MongoDB");
+            return;
         }
-        registerCommands();
+        provider = providers.get(getConfig().getString("Provider"));
+        provider.connect(this);
+        getLogger().info("§aSuccessfully loaded " + provider.getProvider() + " provider.");
+        ReportSystemAPI.setProvider(provider);
+        Language.initConfiguration();
+        loadPlugin();
+        getLogger().info("§aPlugin successfully started.");
     }
 
-    private void registerCommands() {
+    private void loadPlugin() {
+        getServer().getPluginManager().registerEvents(new FormListener(), this);
+        getServer().getPluginManager().registerEvents(new EventListener(), this);
+
         CommandMap map = getServer().getCommandMap();
-        map.register(getConfig().getString("Commands.Report"), new ReportCommand(this));
-        map.register(getConfig().getString("Commands.Reportmanager"), new ReportmanagerCommand(this));
+        map.register(getConfig().getString("Commands.Report"), new ReportCommand(getConfig().getString("Commands.Report"), getConfig().getString("Commands.ReportDescription")));
+        map.register(getConfig().getString("Commands.Reportmanager"), new ReportmanagerCommand(getConfig().getString("Commands.Reportmanager"), getConfig().getString("Commands.ReportmanagerDescription")));
+        map.register(getConfig().getString("Commands.Myreports"), new MyreportsCommand(getConfig().getString("Commands.Myreports"), getConfig().getString("Commands.MyreportsDescription")));
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("Disabling ReportSystem...");
+        provider.disconnect(this);
+    }
+
+    private void registerProvider(Provider provider) {
+        providers.put(provider.getProvider(), provider);
     }
 
     public static ReportSystem getInstance() {
         return instance;
     }
 
-    public boolean isYaml() {
-        return yaml;
-    }
-
-    public boolean isMysql() {
-        return mysql;
-    }
-
-    public boolean isMongodb() {
-        return mongodb;
-    }
 }
