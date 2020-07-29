@@ -23,7 +23,7 @@ public class MySqlProvider extends Provider {
             try {
                 Config config = ReportSystem.getInstance().getConfig();
                 Class.forName("com.mysql.jdbc.Driver");
-                connection = DriverManager.getConnection("jdbc:mysql://" + config.getString("MySql.Host") + ":" + config.getString("MySql.Port") + "/" + config.getString("MySql.Database") + "?autoReconnect=true", config.getString("MySql.User"), config.getString("MySql.Password"));
+                connection = DriverManager.getConnection("jdbc:mysql://" + config.getString("MySql.Host") + ":" + config.getString("MySql.Port") + "/" + config.getString("MySql.Database") + "?autoReconnect=true&useGmtMillisForDatetimes=true&serverTimezone=GMT", config.getString("MySql.User"), config.getString("MySql.Password"));
                 update("CREATE TABLE IF NOT EXISTS opened_reports(player VARCHAR(30), target VARCHAR(30), reason VARCHAR(100), status VARCHAR(30), member VARCHAR(30), id VARCHAR(6), date VARCHAR(30), PRIMARY KEY (id));");
                 update("CREATE TABLE IF NOT EXISTS closed_reports(player VARCHAR(30), target VARCHAR(30), reason VARCHAR(100), status VARCHAR(30), member VARCHAR(30), id VARCHAR(6), date VARCHAR(30), PRIMARY KEY (id));");
                 server.getLogger().info("[MySqlClient] Connection opened.");
@@ -77,6 +77,7 @@ public class MySqlProvider extends Provider {
                 PreparedStatement preparedStatement = getConnection().prepareStatement("DELETE FROM opened_reports WHERE ID = ?");
                 preparedStatement.setString(1, id);
                 preparedStatement.executeUpdate();
+                preparedStatement.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
