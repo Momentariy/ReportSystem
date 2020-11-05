@@ -1,4 +1,4 @@
-package net.llamadevelopment.reportsystem.components.tools;
+package net.llamadevelopment.reportsystem.components.forms;
 
 import cn.nukkit.Player;
 import cn.nukkit.form.element.ElementButton;
@@ -8,11 +8,10 @@ import cn.nukkit.form.element.ElementInput;
 import cn.nukkit.level.Sound;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
-import net.llamadevelopment.reportsystem.components.data.ReportSearch;
-import net.llamadevelopment.reportsystem.components.data.ReportStatus;
 import net.llamadevelopment.reportsystem.components.forms.custom.CustomForm;
 import net.llamadevelopment.reportsystem.components.forms.simple.SimpleForm;
-import net.llamadevelopment.reportsystem.components.managers.database.Provider;
+import net.llamadevelopment.reportsystem.components.language.Language;
+import net.llamadevelopment.reportsystem.components.provider.Provider;
 
 import java.util.Arrays;
 
@@ -22,9 +21,9 @@ public class FormWindows {
 
     public static void sendReportManager(Player player) {
         SimpleForm form = new SimpleForm.Builder(Language.getAndReplaceNP("manager-title"), Language.getAndReplaceNP("manager-content"))
-                .addButton(new ElementButton(Language.getAndReplaceNP("manager-pendingreports", api.getReports(ReportStatus.PENDING).size()),
+                .addButton(new ElementButton(Language.getAndReplaceNP("manager-pendingreports", api.getReports(Report.ReportStatus.PENDING).size()),
                         new ElementButtonImageData("url", Language.getAndReplaceNP("manager-pendingreports-image"))), (FormWindows::sendPendingReports))
-                .addButton(new ElementButton(Language.getAndReplaceNP("manager-myopenreports", api.getReports(ReportStatus.PROGRESS, ReportSearch.MEMBER, player.getName()).size()),
+                .addButton(new ElementButton(Language.getAndReplaceNP("manager-myopenreports", api.getReports(Report.ReportStatus.PROGRESS, Report.ReportSearch.MEMBER, player.getName()).size()),
                         new ElementButtonImageData("url", Language.getAndReplaceNP("manager-myopenreports-image"))), (FormWindows::sendMyProgressReports))
                 .addButton(new ElementButton(Language.getAndReplaceNP("manager-searchplayers"),
                         new ElementButtonImageData("url", Language.getAndReplaceNP("manager-searchplayers-image"))), (FormWindows::sendSearchPlayer))
@@ -37,7 +36,7 @@ public class FormWindows {
 
     public static void sendPendingReports(Player player) {
         SimpleForm.Builder pendingForm = new SimpleForm.Builder(Language.getAndReplaceNP("pending-title"), Language.getAndReplaceNP("pending-content"));
-        api.getReports(ReportStatus.PENDING).forEach(report -> pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("pending-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> sendPendingReportMenu(executor, report.getId())));
+        api.getReports(Report.ReportStatus.PENDING).forEach(report -> pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("pending-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> sendPendingReportMenu(executor, report.getId())));
         pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), FormWindows::sendReportManager);
         SimpleForm form = pendingForm
                 .onClose(executor -> {})
@@ -46,7 +45,7 @@ public class FormWindows {
     }
 
     public static void sendPendingReportMenu(Player player, String id) {
-        Report report = api.getReport(ReportStatus.PENDING, id);
+        Report report = api.getReport(Report.ReportStatus.PENDING, id);
         if (report != null) {
             SimpleForm.Builder pendingReportForm = new SimpleForm.Builder(Language.getAndReplaceNP("pendingreport-title"),
                     Language.getAndReplaceNP("pendingreport-content", report.getPlayer(), report.getTarget(), report.getReason(), report.getStatus(), report.getMember(), report.getId(), report.getDate()));
@@ -71,7 +70,7 @@ public class FormWindows {
 
     public static void sendMyProgressReports(Player player) {
         SimpleForm.Builder pendingForm = new SimpleForm.Builder(Language.getAndReplaceNP("progress-title"), Language.getAndReplaceNP("progress-content"));
-        api.getReports(ReportStatus.PROGRESS, ReportSearch.MEMBER, player.getName()).forEach(report -> pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("progress-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> sendProgressReportMenu(executor, report.getId())));
+        api.getReports(Report.ReportStatus.PROGRESS, Report.ReportSearch.MEMBER, player.getName()).forEach(report -> pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("progress-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> sendProgressReportMenu(executor, report.getId())));
         pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), FormWindows::sendReportManager);
         SimpleForm form = pendingForm
                 .onClose(executor -> {})
@@ -80,7 +79,7 @@ public class FormWindows {
     }
 
     public static void sendProgressReportMenu(Player player, String id) {
-        Report report = api.getReport(ReportStatus.PROGRESS, id);
+        Report report = api.getReport(Report.ReportStatus.PROGRESS, id);
         if (report != null) {
             SimpleForm.Builder pendingReportForm = new SimpleForm.Builder(Language.getAndReplaceNP("progressreport-title"),
                     Language.getAndReplaceNP("progressreport-content", report.getPlayer(), report.getTarget(), report.getReason(), report.getStatus(), report.getMember(), report.getId(), report.getDate()));
@@ -114,7 +113,7 @@ public class FormWindows {
                 .addElement(new ElementInput(Language.getAndReplaceNP("searchplayer-player"), "Player"))
                 .onSubmit((executor, response) -> {
                     if (!response.getInputResponse(2).isEmpty()) {
-                        sendSearchPlayerResult(executor, ReportSearch.valueOf(response.getDropdownResponse(0).getElementContent().toUpperCase()), ReportStatus.valueOf(response.getDropdownResponse(1).getElementContent().toUpperCase()), response.getInputResponse(2));
+                        sendSearchPlayerResult(executor, Report.ReportSearch.valueOf(response.getDropdownResponse(0).getElementContent().toUpperCase()), Report.ReportStatus.valueOf(response.getDropdownResponse(1).getElementContent().toUpperCase()), response.getInputResponse(2));
                     } else {
                         executor.sendMessage(Language.getAndReplace("invalid-input"));
                         ReportSystemAPI.playSound(executor, Sound.NOTE_BASS);
@@ -124,7 +123,7 @@ public class FormWindows {
         form.send(player);
     }
 
-    public static void sendSearchPlayerResult(Player player, ReportSearch search, ReportStatus status, String value) {
+    public static void sendSearchPlayerResult(Player player, Report.ReportSearch search, Report.ReportStatus status, String value) {
         if (api.getReports(status, search, value).size() == 0) {
             player.sendMessage(Language.getAndReplace("no-reports-found"));
             ReportSystemAPI.playSound(player, Sound.NOTE_BASS);
@@ -139,7 +138,7 @@ public class FormWindows {
         form.send(player);
     }
 
-    public static void sendSearchPlayerReport(Player player, ReportSearch search, ReportStatus status, String value, String id) {
+    public static void sendSearchPlayerReport(Player player, Report.ReportSearch search, Report.ReportStatus status, String value, String id) {
         Report report = api.getReport(status, id);
         if (report != null) {
             SimpleForm.Builder pendingReportForm = new SimpleForm.Builder(Language.getAndReplaceNP("searchplayerreport-title"),
@@ -162,8 +161,8 @@ public class FormWindows {
                 .onSubmit((executor, response) -> {
                     if (!response.getInputResponse(1).isEmpty()) {
                         if (response.getDropdownResponse(0).getElementContent().equals("Pending/Progress")) {
-                            sendSearchReportReport(executor, ReportStatus.PROGRESS, response.getInputResponse(1));
-                        } else sendSearchReportReport(executor, ReportStatus.CLOSED, response.getInputResponse(1));
+                            sendSearchReportReport(executor, Report.ReportStatus.PROGRESS, response.getInputResponse(1));
+                        } else sendSearchReportReport(executor, Report.ReportStatus.CLOSED, response.getInputResponse(1));
                     } else {
                         executor.sendMessage(Language.getAndReplace("invalid-input"));
                         ReportSystemAPI.playSound(executor, Sound.NOTE_BASS);
@@ -173,7 +172,7 @@ public class FormWindows {
         form.send(player);
     }
 
-    public static void sendSearchReportReport(Player player, ReportStatus status, String id) {
+    public static void sendSearchReportReport(Player player, Report.ReportStatus status, String id) {
         if (!api.reportIDExists(id, status)) {
             player.sendMessage(Language.getAndReplace("no-reports-found"));
             ReportSystemAPI.playSound(player, Sound.NOTE_BASS);
@@ -196,16 +195,16 @@ public class FormWindows {
 
     public static void sendMyreports(Player player) {
         SimpleForm.Builder myreportsForm = new SimpleForm.Builder(Language.getAndReplaceNP("myreports-title"), Language.getAndReplaceNP("myreports-content"));
-        api.getReports(ReportStatus.PENDING, ReportSearch.PLAYER, player.getName()).forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> sendMyreportsReport(executor, ReportStatus.PENDING, report.getId())));
-        api.getReports(ReportStatus.PROGRESS, ReportSearch.PLAYER, player.getName()).forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> sendMyreportsReport(executor, ReportStatus.PROGRESS, report.getId())));
-        api.getReports(ReportStatus.CLOSED, ReportSearch.PLAYER, player.getName()).forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> sendMyreportsReport(executor, ReportStatus.CLOSED, report.getId())));
+        api.getReports(Report.ReportStatus.PENDING, Report.ReportSearch.PLAYER, player.getName()).forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> sendMyreportsReport(executor, Report.ReportStatus.PENDING, report.getId())));
+        api.getReports(Report.ReportStatus.PROGRESS, Report.ReportSearch.PLAYER, player.getName()).forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> sendMyreportsReport(executor, Report.ReportStatus.PROGRESS, report.getId())));
+        api.getReports(Report.ReportStatus.CLOSED, Report.ReportSearch.PLAYER, player.getName()).forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> sendMyreportsReport(executor, Report.ReportStatus.CLOSED, report.getId())));
         SimpleForm form = myreportsForm
                 .onClose(executor -> {})
                 .build();
         form.send(player);
     }
 
-    public static void sendMyreportsReport(Player player, ReportStatus status, String id) {
+    public static void sendMyreportsReport(Player player, Report.ReportStatus status, String id) {
         Report report = api.getReport(status, id);
         if (report != null) {
             SimpleForm.Builder pendingReportForm = new SimpleForm.Builder(Language.getAndReplaceNP("myreportsreport-title"),

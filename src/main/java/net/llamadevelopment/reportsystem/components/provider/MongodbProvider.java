@@ -1,4 +1,4 @@
-package net.llamadevelopment.reportsystem.components.managers;
+package net.llamadevelopment.reportsystem.components.provider;
 
 import cn.nukkit.utils.Config;
 import com.mongodb.Block;
@@ -9,17 +9,15 @@ import com.mongodb.client.MongoDatabase;
 import net.llamadevelopment.reportsystem.ReportSystem;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
-import net.llamadevelopment.reportsystem.components.data.ReportSearch;
-import net.llamadevelopment.reportsystem.components.data.ReportStatus;
-import net.llamadevelopment.reportsystem.components.managers.database.Provider;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
-public class MongoDBProvider extends Provider {
+public class MongodbProvider extends Provider {
 
     Config config = ReportSystem.getInstance().getConfig();
 
@@ -70,13 +68,21 @@ public class MongoDBProvider extends Provider {
     }
 
     @Override
+    public void hasReported(String player, System target, Consumer<Boolean> hasReported) {
+        CompletableFuture.runAsync(() -> {
+            Document document = openReports.find(new Document("player", player).append("target", target).append("status", "Pending")).first();
+            hasReported.accept(document != null);
+        });
+    }
+
+    @Override
     public boolean hasReported(String player, String target) {
         Document document = openReports.find(new Document("player", player).append("target", target).append("status", "Pending")).first();
         return document != null;
     }
 
     @Override
-    public boolean reportIDExists(String id, ReportStatus status) {
+    public boolean reportIDExists(String id, Report.ReportStatus status) {
         switch (status) {
             case PENDING:
             case PROGRESS: {
@@ -94,7 +100,7 @@ public class MongoDBProvider extends Provider {
     @Override
     public void closeReport(String id) {
         CompletableFuture.runAsync(() -> {
-            Report report = getReport(ReportStatus.PROGRESS, id);
+            Report report = getReport(Report.ReportStatus.PROGRESS, id);
             Document document = new Document("player", report.getPlayer())
                     .append("target", report.getTarget())
                     .append("reason", report.getReason())
@@ -132,7 +138,7 @@ public class MongoDBProvider extends Provider {
     }
 
     @Override
-    public Report getReport(ReportStatus status, String id) {
+    public Report getReport(Report.ReportStatus status, String id) {
         switch (status) {
             case PENDING:
             case PROGRESS: {
@@ -166,7 +172,7 @@ public class MongoDBProvider extends Provider {
     }
 
     @Override
-    public List<Report> getReports(ReportStatus status, ReportSearch search, String value) {
+    public List<Report> getReports(Report.ReportStatus status, Report.ReportSearch search, String value) {
         List<Report> list = new ArrayList<>();
         switch (search) {
             case PLAYER: {
@@ -246,7 +252,7 @@ public class MongoDBProvider extends Provider {
     }
 
     @Override
-    public List<Report> getReports(ReportStatus status) {
+    public List<Report> getReports(Report.ReportStatus status) {
         List<Report> list = new ArrayList<>();
         switch (status) {
             case PROGRESS: {

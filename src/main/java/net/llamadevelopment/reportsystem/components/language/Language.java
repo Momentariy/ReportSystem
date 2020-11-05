@@ -1,4 +1,4 @@
-package net.llamadevelopment.reportsystem.components.tools;
+package net.llamadevelopment.reportsystem.components.language;
 
 import cn.nukkit.utils.Config;
 import net.llamadevelopment.reportsystem.ReportSystem;
@@ -11,7 +11,7 @@ public class Language {
     public static HashMap<String, String> messages = new HashMap<>();
     public static String prefix;
 
-    public static void initConfiguration() {
+    public static void init() {
         messages.clear();
         ReportSystem.getInstance().saveResource("messages.yml");
         Config m = new Config(ReportSystem.getInstance().getDataFolder() + "/messages.yml");

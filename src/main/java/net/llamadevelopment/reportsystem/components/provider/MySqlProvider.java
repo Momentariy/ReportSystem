@@ -1,12 +1,9 @@
-package net.llamadevelopment.reportsystem.components.managers;
+package net.llamadevelopment.reportsystem.components.provider;
 
 import cn.nukkit.utils.Config;
 import net.llamadevelopment.reportsystem.ReportSystem;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
-import net.llamadevelopment.reportsystem.components.data.ReportSearch;
-import net.llamadevelopment.reportsystem.components.data.ReportStatus;
-import net.llamadevelopment.reportsystem.components.managers.database.Provider;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -102,7 +99,7 @@ public class MySqlProvider extends Provider {
     }
 
     @Override
-    public boolean reportIDExists(String id, ReportStatus status) {
+    public boolean reportIDExists(String id, Report.ReportStatus status) {
         switch (status) {
             case PENDING:
             case PROGRESS: {
@@ -138,7 +135,7 @@ public class MySqlProvider extends Provider {
     @Override
     public void closeReport(String id) {
         CompletableFuture.runAsync(() -> {
-            Report report = getReport(ReportStatus.PROGRESS, id);
+            Report report = getReport(Report.ReportStatus.PROGRESS, id);
             update("INSERT INTO closed_reports (PLAYER, TARGET, REASON, STATUS, MEMBER, ID, DATE) VALUES ('" + report.getPlayer() + "', '" + report.getTarget() + "', '" + report.getReason() + "', 'Closed', '" + report.getMember() + "', '" + report.getId() + "', '" + report.getDate() + "');");
             deleteReport(id);
         });
@@ -155,7 +152,7 @@ public class MySqlProvider extends Provider {
     }
 
     @Override
-    public Report getReport(ReportStatus status, String value) {
+    public Report getReport(Report.ReportStatus status, String value) {
         switch (status) {
             case PENDING:
             case PROGRESS: {
@@ -193,7 +190,7 @@ public class MySqlProvider extends Provider {
     }
 
     @Override
-    public List<Report> getReports(ReportStatus status, ReportSearch search, String value) {
+    public List<Report> getReports(Report.ReportStatus status, Report.ReportSearch search, String value) {
         List<Report> list = new ArrayList<>();
         switch (search) {
             case PLAYER: {
@@ -361,7 +358,7 @@ public class MySqlProvider extends Provider {
     }
 
     @Override
-    public List<Report> getReports(ReportStatus status) {
+    public List<Report> getReports(Report.ReportStatus status) {
         List<Report> list = new ArrayList<>();
         switch (status) {
             case PROGRESS: {

@@ -3,7 +3,7 @@ package net.llamadevelopment.reportsystem.components.api;
 import cn.nukkit.Player;
 import cn.nukkit.level.Sound;
 import cn.nukkit.network.protocol.PlaySoundPacket;
-import net.llamadevelopment.reportsystem.components.managers.database.Provider;
+import net.llamadevelopment.reportsystem.components.provider.Provider;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

@@ -7,8 +7,8 @@ import cn.nukkit.event.player.PlayerJoinEvent;
 import cn.nukkit.level.Sound;
 import net.llamadevelopment.reportsystem.ReportSystem;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
-import net.llamadevelopment.reportsystem.components.data.ReportStatus;
-import net.llamadevelopment.reportsystem.components.tools.Language;
+import net.llamadevelopment.reportsystem.components.data.Report;
+import net.llamadevelopment.reportsystem.components.language.Language;
 
 public class EventListener implements Listener {
 
@@ -16,7 +16,7 @@ public class EventListener implements Listener {
     public void on(PlayerJoinEvent event) {
         Server.getInstance().getScheduler().scheduleDelayedTask(ReportSystem.getInstance(), () -> {
             if (event.getPlayer().hasPermission("reportsystem.command.reportmanager")) {
-                int pending = ReportSystemAPI.getProvider().getReports(ReportStatus.PENDING).size();
+                int pending = ReportSystemAPI.getProvider().getReports(Report.ReportStatus.PENDING).size();
                 if (pending >= 1) {
                     event.getPlayer().sendMessage(Language.getAndReplace("pending-reports-info", pending));
                     ReportSystemAPI.playSound(event.getPlayer(), Sound.NOTE_BELL);

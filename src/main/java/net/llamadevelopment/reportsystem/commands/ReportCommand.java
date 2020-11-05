@@ -7,8 +7,8 @@ import cn.nukkit.command.data.CommandParamType;
 import cn.nukkit.command.data.CommandParameter;
 import cn.nukkit.level.Sound;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
-import net.llamadevelopment.reportsystem.components.managers.database.Provider;
-import net.llamadevelopment.reportsystem.components.tools.Language;
+import net.llamadevelopment.reportsystem.components.provider.Provider;
+import net.llamadevelopment.reportsystem.components.language.Language;
 
 public class ReportCommand extends Command {
 

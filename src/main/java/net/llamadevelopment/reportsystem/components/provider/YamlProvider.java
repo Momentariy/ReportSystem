@@ -1,12 +1,9 @@
-package net.llamadevelopment.reportsystem.components.managers;
+package net.llamadevelopment.reportsystem.components.provider;
 
 import cn.nukkit.utils.Config;
 import net.llamadevelopment.reportsystem.ReportSystem;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
-import net.llamadevelopment.reportsystem.components.data.ReportSearch;
-import net.llamadevelopment.reportsystem.components.data.ReportStatus;
-import net.llamadevelopment.reportsystem.components.managers.database.Provider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +57,7 @@ public class YamlProvider extends Provider {
     }
 
     @Override
-    public boolean reportIDExists(String id, ReportStatus status) {
+    public boolean reportIDExists(String id, Report.ReportStatus status) {
         switch (status) {
             case PENDING:
             case PROGRESS: {
@@ -75,7 +72,7 @@ public class YamlProvider extends Provider {
 
     @Override
     public void closeReport(String id) {
-        Report report = getReport(ReportStatus.PROGRESS, id);
+        Report report = getReport(Report.ReportStatus.PROGRESS, id);
         closedReports.set("Reports." + id + ".Player", report.getPlayer());
         closedReports.set("Reports." + id + ".Target", report.getTarget());
         closedReports.set("Reports." + id + ".Reason", report.getReason());
@@ -102,7 +99,7 @@ public class YamlProvider extends Provider {
     }
 
     @Override
-    public Report getReport(ReportStatus status, String value) {
+    public Report getReport(Report.ReportStatus status, String value) {
         switch (status) {
             case PENDING:
             case PROGRESS: {
@@ -128,7 +125,7 @@ public class YamlProvider extends Provider {
     }
 
     @Override
-    public List<Report> getReports(ReportStatus status, ReportSearch search, String value) {
+    public List<Report> getReports(Report.ReportStatus status, Report.ReportSearch search, String value) {
         List<Report> list = new ArrayList<>();
         switch (search) {
             case PLAYER: {
@@ -272,7 +269,7 @@ public class YamlProvider extends Provider {
     }
 
     @Override
-    public List<Report> getReports(ReportStatus status) {
+    public List<Report> getReports(Report.ReportStatus status) {
         List<Report> list = new ArrayList<>();
         switch (status) {
             case PROGRESS: {

@@ -5,11 +5,10 @@ import cn.nukkit.command.Command;
 import cn.nukkit.command.CommandSender;
 import cn.nukkit.level.Sound;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
-import net.llamadevelopment.reportsystem.components.data.ReportSearch;
-import net.llamadevelopment.reportsystem.components.data.ReportStatus;
-import net.llamadevelopment.reportsystem.components.managers.database.Provider;
-import net.llamadevelopment.reportsystem.components.tools.FormWindows;
-import net.llamadevelopment.reportsystem.components.tools.Language;
+import net.llamadevelopment.reportsystem.components.data.Report;
+import net.llamadevelopment.reportsystem.components.provider.Provider;
+import net.llamadevelopment.reportsystem.components.forms.FormWindows;
+import net.llamadevelopment.reportsystem.components.language.Language;
 
 public class MyreportsCommand extends Command {
 
@@ -22,7 +21,7 @@ public class MyreportsCommand extends Command {
         if (sender instanceof Player) {
             Player player = (Player) sender;
             Provider api = ReportSystemAPI.getProvider();
-            int amount = api.getReports(ReportStatus.PENDING, ReportSearch.PLAYER, player.getName()).size() + api.getReports(ReportStatus.PROGRESS, ReportSearch.PLAYER, player.getName()).size() + api.getReports(ReportStatus.CLOSED, ReportSearch.PLAYER, player.getName()).size();
+            int amount = api.getReports(Report.ReportStatus.PENDING, Report.ReportSearch.PLAYER, player.getName()).size() + api.getReports(Report.ReportStatus.PROGRESS, Report.ReportSearch.PLAYER, player.getName()).size() + api.getReports(Report.ReportStatus.CLOSED, Report.ReportSearch.PLAYER, player.getName()).size();
             if (amount == 0) {
                 player.sendMessage(Language.getAndReplace("no-myreports"));
                 ReportSystemAPI.playSound(player, Sound.NOTE_BASS);

@@ -5,8 +5,8 @@ import cn.nukkit.command.Command;
 import cn.nukkit.command.CommandSender;
 import cn.nukkit.level.Sound;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
-import net.llamadevelopment.reportsystem.components.tools.FormWindows;
-import net.llamadevelopment.reportsystem.components.tools.Language;
+import net.llamadevelopment.reportsystem.components.forms.FormWindows;
+import net.llamadevelopment.reportsystem.components.language.Language;
 
 public class ReportmanagerCommand extends Command {
 
