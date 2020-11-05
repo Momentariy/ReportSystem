@@ -1,20 +1,29 @@
 Provider: Yaml
+
 MySql:
   Host: "127.0.0.1"
   Port: "3306"
   User: "root"
   Database: "reportsystem"
   Password: "japanese_goblin"
+
 MongoDB:
   Uri: "URI_LINK"
   Database: "reportsystem"
 
 Commands:
-  Report: "report"
-  ReportDescription: "Report a bad player"
-  Reportmanager: "reportmanager"
-  ReportmanagerDescription: "Manage reports in an UI"
-  Myreports: "myreports"
-  MyreportsDescription: "Show all your reports"
+  Myreports:
+    Name: "myreports"
+    Description: "Show all your reports"
+    Aliases: [ "mr" ]
+  Report:
+    Name: "report"
+    Description: "Report bad players"
+    Aliases: [ "rep" ]
+  Reportmanager:
+    Name: "reportmanager"
+    Description: "Open the Report Administration UI"
+    Permission: "reportsystem.command.reportmanager"
+    Aliases: [ "rma" ]
 
 ConfigVersion: 1

@@ -12,16 +12,25 @@ import net.llamadevelopment.reportsystem.components.language.Language;
 
 public class EventListener implements Listener {
 
+    private final ReportSystem instance;
+
+    public EventListener(ReportSystem instance) {
+        this.instance = instance;
+    }
+
     @EventHandler
     public void on(PlayerJoinEvent event) {
         Server.getInstance().getScheduler().scheduleDelayedTask(ReportSystem.getInstance(), () -> {
             if (event.getPlayer().hasPermission("reportsystem.command.reportmanager")) {
-                int pending = ReportSystemAPI.getProvider().getReports(Report.ReportStatus.PENDING).size();
-                if (pending >= 1) {
-                    event.getPlayer().sendMessage(Language.getAndReplace("pending-reports-info", pending));
-                    ReportSystemAPI.playSound(event.getPlayer(), Sound.NOTE_BELL);
-                }
+                this.instance.provider.getReports(Report.ReportStatus.PENDING, reports -> {
+                    int pending = reports.size();
+                    if (pending >= 1) {
+                        event.getPlayer().sendMessage(Language.getAndReplace("pending-reports-info", pending));
+                        ReportSystemAPI.playSound(event.getPlayer(), Sound.NOTE_BELL);
+                    }
+                });
             }
-        }, 50);
+        }, 75);
     }
+
 }

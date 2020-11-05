@@ -8,6 +8,7 @@ import net.llamadevelopment.reportsystem.commands.ReportCommand;
 import net.llamadevelopment.reportsystem.commands.ReportmanagerCommand;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.forms.FormListener;
+import net.llamadevelopment.reportsystem.components.forms.FormWindows;
 import net.llamadevelopment.reportsystem.components.provider.MongodbProvider;
 import net.llamadevelopment.reportsystem.components.provider.MySqlProvider;
 import net.llamadevelopment.reportsystem.components.provider.YamlProvider;
@@ -26,6 +27,9 @@ public class ReportSystem extends PluginBase {
     @Getter
     private static ReportSystem instance;
 
+    @Getter
+    private FormWindows formWindows;
+
     @Override
     public void onEnable() {
         instance = this;
@@ -42,22 +46,24 @@ public class ReportSystem extends PluginBase {
             this.provider.connect(this);
             this.getLogger().info("§aSuccessfully loaded " + this.provider.getProvider() + " provider.");
             ReportSystemAPI.setProvider(this.provider);
+            this.formWindows = new FormWindows(this);
             Language.init();
             this.loadPlugin();
             this.getLogger().info("§aReportSystem successfully started.");
         } catch (Exception e) {
             e.printStackTrace();
+            this.getLogger().error("§4Failed to load ReportSystem.");
         }
     }
 
     private void loadPlugin() {
         this.getServer().getPluginManager().registerEvents(new FormListener(), this);
-        this.getServer().getPluginManager().registerEvents(new EventListener(), this);
+        this.getServer().getPluginManager().registerEvents(new EventListener(this), this);
 
         CommandMap map = this.getServer().getCommandMap();
-        map.register(getConfig().getString("Commands.Report"), new ReportCommand(getConfig().getString("Commands.Report"), getConfig().getString("Commands.ReportDescription")));
-        map.register(getConfig().getString("Commands.Reportmanager"), new ReportmanagerCommand(getConfig().getString("Commands.Reportmanager"), getConfig().getString("Commands.ReportmanagerDescription")));
-        map.register(getConfig().getString("Commands.Myreports"), new MyreportsCommand(getConfig().getString("Commands.Myreports"), getConfig().getString("Commands.MyreportsDescription")));
+        map.register("reportsystem", new ReportCommand(this));
+        map.register("reportsystem", new ReportmanagerCommand(this));
+        map.register("reportsystem", new MyreportsCommand(this));
     }
 
     @Override

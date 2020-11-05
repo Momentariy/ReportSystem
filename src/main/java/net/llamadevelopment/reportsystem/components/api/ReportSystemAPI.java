@@ -3,6 +3,8 @@ package net.llamadevelopment.reportsystem.components.api;
 import cn.nukkit.Player;
 import cn.nukkit.level.Sound;
 import cn.nukkit.network.protocol.PlaySoundPacket;
+import lombok.Getter;
+import lombok.Setter;
 import net.llamadevelopment.reportsystem.components.provider.Provider;
 
 import java.text.DateFormat;
@@ -12,16 +14,11 @@ import java.util.Random;
 
 public class ReportSystemAPI {
 
+    @Getter
+    @Setter
     private static Provider provider;
 
-    public static void setProvider(Provider provider) {
-        ReportSystemAPI.provider = provider;
-    }
-
-    public static Provider getProvider() {
-        return provider;
-    }
-
+    @Deprecated
     public static String getRandomIDCode() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         StringBuilder stringBuilder = new StringBuilder();
@@ -33,12 +30,14 @@ public class ReportSystemAPI {
         return stringBuilder.toString();
     }
 
+    @Deprecated
     public static String getDate() {
         Date now = new Date();
         DateFormat dateFormat = new SimpleDateFormat("dd.MM.yy HH:mm");
         return dateFormat.format(now);
     }
 
+    @Deprecated
     public static void playSound(Player player, Sound sound) {
         PlaySoundPacket packet = new PlaySoundPacket();
         packet.name = sound.getSound();
@@ -49,4 +48,5 @@ public class ReportSystemAPI {
         packet.pitch = 1.0F;
         player.dataPacket(packet);
     }
+
 }

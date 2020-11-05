@@ -1,28 +1,52 @@
 package net.llamadevelopment.reportsystem.components.provider;
 
-import cn.nukkit.utils.Config;
 import net.llamadevelopment.reportsystem.ReportSystem;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
+import net.llamadevelopment.reportsystem.components.simplesqlclient.MySqlClient;
+import net.llamadevelopment.reportsystem.components.simplesqlclient.objects.SqlColumn;
+import net.llamadevelopment.reportsystem.components.simplesqlclient.objects.SqlDocument;
+import net.llamadevelopment.reportsystem.components.simplesqlclient.objects.SqlDocumentSet;
 
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public class MySqlProvider extends Provider {
 
-    Connection connection;
+    private MySqlClient client;
 
     @Override
     public void connect(ReportSystem server) {
         CompletableFuture.runAsync(() -> {
             try {
-                Config config = ReportSystem.getInstance().getConfig();
-                Class.forName("com.mysql.jdbc.Driver");
-                connection = DriverManager.getConnection("jdbc:mysql://" + config.getString("MySql.Host") + ":" + config.getString("MySql.Port") + "/" + config.getString("MySql.Database") + "?autoReconnect=true&useGmtMillisForDatetimes=true&serverTimezone=GMT", config.getString("MySql.User"), config.getString("MySql.Password"));
-                update("CREATE TABLE IF NOT EXISTS opened_reports(player VARCHAR(30), target VARCHAR(30), reason VARCHAR(100), status VARCHAR(30), member VARCHAR(30), id VARCHAR(6), date VARCHAR(30), PRIMARY KEY (id));");
-                update("CREATE TABLE IF NOT EXISTS closed_reports(player VARCHAR(30), target VARCHAR(30), reason VARCHAR(100), status VARCHAR(30), member VARCHAR(30), id VARCHAR(6), date VARCHAR(30), PRIMARY KEY (id));");
+                this.client = new MySqlClient(
+                        server.getConfig().getString("MySql.Host"),
+                        server.getConfig().getString("MySql.Port"),
+                        server.getConfig().getString("MySql.User"),
+                        server.getConfig().getString("MySql.Password"),
+                        server.getConfig().getString("MySql.Database")
+                );
+
+                this.client.createTable("opened_reports", "id",
+                        new SqlColumn("player", SqlColumn.Type.VARCHAR, 30)
+                                .append("target", SqlColumn.Type.VARCHAR, 30)
+                                .append("reason", SqlColumn.Type.VARCHAR, 100)
+                                .append("status", SqlColumn.Type.VARCHAR, 30)
+                                .append("member", SqlColumn.Type.VARCHAR, 30)
+                                .append("id", SqlColumn.Type.VARCHAR, 6)
+                                .append("date", SqlColumn.Type.VARCHAR, 30));
+
+                this.client.createTable("closed_reports", "id",
+                        new SqlColumn("player", SqlColumn.Type.VARCHAR, 30)
+                                .append("target", SqlColumn.Type.VARCHAR, 30)
+                                .append("reason", SqlColumn.Type.VARCHAR, 100)
+                                .append("status", SqlColumn.Type.VARCHAR, 30)
+                                .append("member", SqlColumn.Type.VARCHAR, 30)
+                                .append("id", SqlColumn.Type.VARCHAR, 6)
+                                .append("date", SqlColumn.Type.VARCHAR, 30));
+
                 server.getLogger().info("[MySqlClient] Connection opened.");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -31,390 +55,254 @@ public class MySqlProvider extends Provider {
         });
     }
 
-    public Connection getConnection() {
-        return connection;
-    }
-
-    public void update(String query) {
-        CompletableFuture.runAsync(() -> {
-            if (connection != null) {
-                try {
-                    PreparedStatement ps = connection.prepareStatement(query);
-                    ps.executeUpdate();
-                    ps.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
     @Override
     public void disconnect(ReportSystem server) {
-        if (connection != null) {
-            try {
-                connection.close();
-                server.getLogger().info("[MySqlClient] Connection closed.");
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-                server.getLogger().info("[MySqlClient] Failed to close connection.");
-            }
-        }
+        server.getLogger().info("[MySqlClient] Connection closed.");
     }
 
     @Override
     public void createReport(String player, String target, String reason) {
-        update("INSERT INTO opened_reports (PLAYER, TARGET, REASON, STATUS, MEMBER, ID, DATE) VALUES ('" + player + "', '" + target + "', '" + reason + "', 'Pending', 'Unknown', '" + ReportSystemAPI.getRandomIDCode() + "', '" + ReportSystemAPI.getDate() + "');");
+        CompletableFuture.runAsync(() -> {
+            String id = ReportSystemAPI.getRandomIDCode();
+            String date = ReportSystemAPI.getDate();
+            this.client.insert("opened_reports", new SqlDocument("player", player)
+                    .append("target", target)
+                    .append("reason", reason)
+                    .append("status", "Pending")
+                    .append("member", "Unknown")
+                    .append("id", id)
+                    .append("date", date));
+        });
     }
 
     @Override
     public void deleteReport(String id) {
+        CompletableFuture.runAsync(() -> this.client.delete("opened_reports", new SqlDocument("id", id)));
+    }
+
+    @Override
+    public void hasReported(String player, String target, Consumer<Boolean> hasReported) {
         CompletableFuture.runAsync(() -> {
-            try {
-                PreparedStatement preparedStatement = getConnection().prepareStatement("DELETE FROM opened_reports WHERE ID = ?");
-                preparedStatement.setString(1, id);
-                preparedStatement.executeUpdate();
-                preparedStatement.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+            SqlDocument document = this.client.find("opened_reports", new SqlDocument("target", target)).first();
+            if (document != null) {
+                if (document.getString("target").equals(target) && document.getString("player").equals(player) && document.getString("status").equals("Pending")) hasReported.accept(true);
             }
         });
     }
 
     @Override
-    public boolean hasReported(String player, String target) {
-        try {
-            PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE TARGET = ?");
-            preparedStatement.setString(1, target);
-            ResultSet rs = preparedStatement.executeQuery();
-            if (rs.next()) {
-                if (rs.getString("TARGET").equals(target) && rs.getString("PLAYER").equals(player) && rs.getString("STATUS").equals("Pending")) return true;
-            } else return false;
-            rs.close();
-            preparedStatement.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    @Override
-    public boolean reportIDExists(String id, Report.ReportStatus status) {
-        switch (status) {
-            case PENDING:
-            case PROGRESS: {
-                try {
-                    PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE ID = ?");
-                    preparedStatement.setString(1, id);
-                    ResultSet rs = preparedStatement.executeQuery();
-                    if (rs.next()) return rs.getString("ID") != null;
-                    rs.close();
-                    preparedStatement.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+    public void reportIDExists(String id, Report.ReportStatus status, Consumer<Boolean> exists) {
+        CompletableFuture.runAsync(() -> {
+            switch (status) {
+                case PENDING:
+                case PROGRESS: {
+                    SqlDocument document = this.client.find("opened_reports", new SqlDocument("id", id)).first();
+                    if (document != null) {
+                        exists.accept(document.getString("id") != null);
+                    }
                 }
-            }
-            break;
-            case CLOSED: {
-                try {
-                    PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM closed_reports WHERE ID = ?");
-                    preparedStatement.setString(1, id);
-                    ResultSet rs = preparedStatement.executeQuery();
-                    if (rs.next()) return rs.getString("ID") != null;
-                    rs.close();
-                    preparedStatement.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                break;
+                case CLOSED: {
+                    SqlDocument document = this.client.find("closed_reports", new SqlDocument("id", id)).first();
+                    if (document != null) {
+                        exists.accept(document.getString("id") != null);
+                    }
                 }
+                break;
             }
-            break;
-        }
-        return false;
+        });
     }
 
     @Override
     public void closeReport(String id) {
         CompletableFuture.runAsync(() -> {
-            Report report = getReport(Report.ReportStatus.PROGRESS, id);
-            update("INSERT INTO closed_reports (PLAYER, TARGET, REASON, STATUS, MEMBER, ID, DATE) VALUES ('" + report.getPlayer() + "', '" + report.getTarget() + "', '" + report.getReason() + "', 'Closed', '" + report.getMember() + "', '" + report.getId() + "', '" + report.getDate() + "');");
-            deleteReport(id);
+            this.getReport(Report.ReportStatus.PROGRESS, id, report -> this.client.insert("closed_reports", new SqlDocument("player", report.getPlayer())
+                    .append("target", report.getTarget())
+                    .append("reason", report.getReason())
+                    .append("status", "Closed")
+                    .append("member", report.getMember())
+                    .append("id", report.getId())
+                    .append("date", report.getDate())));
+            this.deleteReport(id);
         });
     }
 
     @Override
     public void updateStatus(String id, String status) {
-        update("UPDATE opened_reports SET STATUS= '" + status + "' WHERE ID= '" + id + "';");
+        CompletableFuture.runAsync(() -> this.client.update("opened_reports", new SqlDocument("id", id), new SqlDocument("status", status)));
     }
 
     @Override
     public void updateStaffmember(String id, String s) {
-        update("UPDATE opened_reports SET MEMBER= '" + s + "' WHERE ID= '" + id + "';");
+        CompletableFuture.runAsync(() -> this.client.update("opened_reports", new SqlDocument("id", id), new SqlDocument("member", s)));
     }
 
     @Override
-    public Report getReport(Report.ReportStatus status, String value) {
-        switch (status) {
-            case PENDING:
-            case PROGRESS: {
-                try {
-                    PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE ID = ?");
-                    preparedStatement.setString(1, value);
-                    ResultSet rs = preparedStatement.executeQuery();
-                    if (rs.next()) {
-                        return new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+    public void getReport(Report.ReportStatus status, String value, Consumer<Report> report) {
+        CompletableFuture.runAsync(() -> {
+            switch (status) {
+                case PENDING:
+                case PROGRESS: {
+                    SqlDocument document = this.client.find("opened_reports", new SqlDocument("id", value)).first();
+                    if (document != null) {
+                        report.accept(new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE")));
                     }
-                    rs.close();
-                    preparedStatement.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
-            }
-            break;
-            case CLOSED: {
-                try {
-                    PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM closed_reports WHERE ID = ?");
-                    preparedStatement.setString(1, value);
-                    ResultSet rs = preparedStatement.executeQuery();
-                    if (rs.next()) {
-                        return new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                break;
+                case CLOSED: {
+                    SqlDocument document = this.client.find("closed_reports", new SqlDocument("id", value)).first();
+                    if (document != null) {
+                        report.accept(new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE")));
                     }
-                    rs.close();
-                    preparedStatement.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
+                break;
             }
-            break;
-        }
-        return null;
+        });
     }
 
     @Override
-    public List<Report> getReports(Report.ReportStatus status, Report.ReportSearch search, String value) {
-        List<Report> list = new ArrayList<>();
-        switch (search) {
-            case PLAYER: {
-                switch (status) {
-                    case PROGRESS: {
-                        try {
-                            PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE PLAYER = ?");
-                            preparedStatement.setString(1, value);
-                            ResultSet rs = preparedStatement.executeQuery();
-                            while (rs.next()) {
-                                if (rs.getString("STATUS").equals("Progress")) {
-                                    Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+    public void getReports(Report.ReportStatus status, Report.ReportSearch search, String value, Consumer<Set<Report>> reports) {
+        CompletableFuture.runAsync(() -> {
+            Set<Report> list = new HashSet<>();
+            switch (search) {
+                case PLAYER: {
+                    switch (status) {
+                        case PROGRESS: {
+                            SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("player", value));
+                            documentSet.getAll().forEach(document -> {
+                                if (document.getString("status").equals("Progress")) {
+                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                                     list.add(report);
                                 }
-                            }
-                            rs.close();
-                            preparedStatement.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            });
                         }
-                    }
-                    break;
-                    case PENDING: {
-                        try {
-                            PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE PLAYER = ?");
-                            preparedStatement.setString(1, value);
-                            ResultSet rs = preparedStatement.executeQuery();
-                            while (rs.next()) {
-                                if (rs.getString("STATUS").equals("Pending")) {
-                                    Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                        break;
+                        case PENDING: {
+                            SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("player", value));
+                            documentSet.getAll().forEach(document -> {
+                                if (document.getString("status").equals("Pending")) {
+                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                                     list.add(report);
                                 }
-                            }
-                            rs.close();
-                            preparedStatement.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            });
                         }
-                    }
-                    break;
-                    case CLOSED: {
-                        try {
-                            PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM closed_reports WHERE PLAYER = ?");
-                            preparedStatement.setString(1, value);
-                            ResultSet rs = preparedStatement.executeQuery();
-                            while (rs.next()) {
-                                if (rs.getString("STATUS").equals("Closed")) {
-                                    Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                        break;
+                        case CLOSED: {
+                            SqlDocumentSet documentSet = this.client.find("closed_reports", new SqlDocument("player", value));
+                            documentSet.getAll().forEach(document -> {
+                                if (document.getString("status").equals("Closed")) {
+                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                                     list.add(report);
                                 }
-                            }
-                            rs.close();
-                            preparedStatement.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            });
                         }
+                        break;
                     }
-                    break;
                 }
-            }
-            break;
-            case TARGET: {
-                switch (status) {
-                    case PROGRESS: {
-                        try {
-                            PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE TARGET = ?");
-                            preparedStatement.setString(1, value);
-                            ResultSet rs = preparedStatement.executeQuery();
-                            while (rs.next()) {
-                                if (rs.getString("STATUS").equals("Progress")) {
-                                    Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                break;
+                case TARGET: {
+                    switch (status) {
+                        case PROGRESS: {
+                            SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("target", value));
+                            documentSet.getAll().forEach(document -> {
+                                if (document.getString("status").equals("Progress")) {
+                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                                     list.add(report);
                                 }
-                            }
-                            rs.close();
-                            preparedStatement.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            });
                         }
-                    }
-                    break;
-                    case PENDING: {
-                        try {
-                            PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE TARGET = ?");
-                            preparedStatement.setString(1, value);
-                            ResultSet rs = preparedStatement.executeQuery();
-                            while (rs.next()) {
-                                if (rs.getString("STATUS").equals("Pending")) {
-                                    Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                        break;
+                        case PENDING: {
+                            SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("target", value));
+                            documentSet.getAll().forEach(document -> {
+                                if (document.getString("status").equals("Pending")) {
+                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                                     list.add(report);
                                 }
-                            }
-                            rs.close();
-                            preparedStatement.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            });
                         }
-                    }
-                    break;
-                    case CLOSED: {
-                        try {
-                            PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM closed_reports WHERE TARGET = ?");
-                            preparedStatement.setString(1, value);
-                            ResultSet rs = preparedStatement.executeQuery();
-                            while (rs.next()) {
-                                if (rs.getString("STATUS").equals("Closed")) {
-                                    Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                        break;
+                        case CLOSED: {
+                            SqlDocumentSet documentSet = this.client.find("closed_reports", new SqlDocument("target", value));
+                            documentSet.getAll().forEach(document -> {
+                                if (document.getString("status").equals("Closed")) {
+                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                                     list.add(report);
                                 }
-                            }
-                            rs.close();
-                            preparedStatement.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            });
                         }
+                        break;
                     }
-                    break;
                 }
-            }
-            break;
-            case MEMBER: {
-                switch (status) {
-                    case PENDING:
-                    case PROGRESS: {
-                        try {
-                            PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE MEMBER = ?");
-                            preparedStatement.setString(1, value);
-                            ResultSet rs = preparedStatement.executeQuery();
-                            while (rs.next()) {
-                                if (rs.getString("STATUS").equals("Progress")) {
-                                    Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                break;
+                case MEMBER: {
+                    switch (status) {
+                        case PENDING:
+                        case PROGRESS: {
+                            SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("member", value));
+                            documentSet.getAll().forEach(document -> {
+                                if (document.getString("status").equals("Progress")) {
+                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                                     list.add(report);
                                 }
-                            }
-                            rs.close();
-                            preparedStatement.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            });
                         }
-                    }
-                    break;
-                    case CLOSED: {
-                        try {
-                            PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM closed_reports WHERE MEMBER = ?");
-                            preparedStatement.setString(1, value);
-                            ResultSet rs = preparedStatement.executeQuery();
-                            while (rs.next()) {
-                                if (rs.getString("STATUS").equals("Closed")) {
-                                    Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                        break;
+                        case CLOSED: {
+                            SqlDocumentSet documentSet = this.client.find("closed_reports", new SqlDocument("member", value));
+                            documentSet.getAll().forEach(document -> {
+                                if (document.getString("status").equals("Closed")) {
+                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                                     list.add(report);
                                 }
-                            }
-                            rs.close();
-                            preparedStatement.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            });
                         }
+                        break;
                     }
-                    break;
                 }
+                break;
             }
-            break;
-        }
-        return list;
+            reports.accept(list);
+        });
     }
 
     @Override
-    public List<Report> getReports(Report.ReportStatus status) {
-        List<Report> list = new ArrayList<>();
-        switch (status) {
-            case PROGRESS: {
-                try {
-                    PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE STATUS = ?");
-                    preparedStatement.setString(1, "Progress");
-                    ResultSet rs = preparedStatement.executeQuery();
-                    while (rs.next()) {
-                        Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+    public void getReports(Report.ReportStatus status, Consumer<Set<Report>> reports) {
+        CompletableFuture.runAsync(() -> {
+            Set<Report> list = new HashSet<>();
+            switch (status) {
+                case PROGRESS: {
+                    SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("status", "Progress"));
+                    documentSet.getAll().forEach(document -> {
+                        Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                         list.add(report);
-                    }
-                    rs.close();
-                    preparedStatement.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    });
                 }
-            }
-            break;
-            case PENDING: {
-                try {
-                    PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM opened_reports WHERE STATUS = ?");
-                    preparedStatement.setString(1, "Pending");
-                    ResultSet rs = preparedStatement.executeQuery();
-                    while (rs.next()) {
-                        Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                break;
+                case PENDING: {
+                    SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("status", "Pending"));
+                    documentSet.getAll().forEach(document -> {
+                        Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                         list.add(report);
-                    }
-                    rs.close();
-                    preparedStatement.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    });
                 }
-            }
-            break;
-            case CLOSED: {
-                try {
-                    PreparedStatement preparedStatement = getConnection().prepareStatement("SELECT * FROM closed_reports WHERE STATUS = ?");
-                    preparedStatement.setString(1, "Closed");
-                    ResultSet rs = preparedStatement.executeQuery();
-                    while (rs.next()) {
-                        Report report = new Report(rs.getString("PLAYER"), rs.getString("TARGET"), rs.getString("REASON"), rs.getString("STATUS"), rs.getString("MEMBER"), rs.getString("ID"), rs.getString("DATE"));
+                break;
+                case CLOSED: {
+                    SqlDocumentSet documentSet = this.client.find("closed_reports", new SqlDocument("status", "Closed"));
+                    documentSet.getAll().forEach(document -> {
+                        Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
                         list.add(report);
-                    }
-                    rs.close();
-                    preparedStatement.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    });
                 }
+                break;
             }
-            break;
-        }
-        return list;
+            reports.accept(list);
+        });
     }
 
     @Override
     public String getProvider() {
         return "MySql";
     }
+
 }

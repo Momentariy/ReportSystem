@@ -5,14 +5,13 @@ import net.llamadevelopment.reportsystem.ReportSystem;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public class YamlProvider extends Provider {
 
-    Config openedReports, closedReports;
+    private Config openedReports, closedReports;
 
     @Override
     public void connect(ReportSystem server) {
@@ -29,116 +28,114 @@ public class YamlProvider extends Provider {
     public void createReport(String player, String target, String reason) {
         String id = ReportSystemAPI.getRandomIDCode();
         String date = ReportSystemAPI.getDate();
-        openedReports.set("Reports." + id + ".Player", player);
-        openedReports.set("Reports." + id + ".Target", target);
-        openedReports.set("Reports." + id + ".Reason", reason);
-        openedReports.set("Reports." + id + ".Status", "Pending");
-        openedReports.set("Reports." + id + ".Member", "Unknown");
-        openedReports.set("Reports." + id + ".Date", date);
-        openedReports.save();
-        openedReports.reload();
+        this.openedReports.set("Reports." + id + ".Player", player);
+        this.openedReports.set("Reports." + id + ".Target", target);
+        this.openedReports.set("Reports." + id + ".Reason", reason);
+        this.openedReports.set("Reports." + id + ".Status", "Pending");
+        this.openedReports.set("Reports." + id + ".Member", "Unknown");
+        this.openedReports.set("Reports." + id + ".Date", date);
+        this.openedReports.save();
+        this.openedReports.reload();
     }
 
     @Override
     public void deleteReport(String id) {
-        Map<String, Object> map = openedReports.getSection("Reports").getAllMap();
+        Map<String, Object> map = this.openedReports.getSection("Reports").getAllMap();
         map.remove(id);
-        openedReports.set("Reports", map);
-        openedReports.save();
-        openedReports.reload();
+        this.openedReports.set("Reports", map);
+        this.openedReports.save();
+        this.openedReports.reload();
     }
 
     @Override
-    public boolean hasReported(String player, String target) {
-        for (String id : openedReports.getSection("Reports").getKeys(false)) {
-            if (openedReports.getString("Reports." + id + ".Target").equals(target) && openedReports.getString("Reports." + id + ".Player").equals(player) && openedReports.getString("Reports." + id + ".Status").equals("Pending")) return true;
+    public void hasReported(String player, String target, Consumer<Boolean> hasReported) {
+        for (String id : this.openedReports.getSection("Reports").getKeys(false)) {
+            if (this.openedReports.getString("Reports." + id + ".Target").equals(target) && this.openedReports.getString("Reports." + id + ".Player").equals(player) && this.openedReports.getString("Reports." + id + ".Status").equals("Pending")) hasReported.accept(true);
         }
-        return false;
     }
 
     @Override
-    public boolean reportIDExists(String id, Report.ReportStatus status) {
+    public void reportIDExists(String id, Report.ReportStatus status, Consumer<Boolean> exists) {
         switch (status) {
             case PENDING:
             case PROGRESS: {
-                return openedReports.exists("Reports." + id);
+                exists.accept(this.openedReports.exists("Reports." + id));
             }
             case CLOSED: {
-                return closedReports.exists("Reports." + id);
+                exists.accept(this.closedReports.exists("Reports." + id));
             }
         }
-        return false;
     }
 
     @Override
     public void closeReport(String id) {
-        Report report = getReport(Report.ReportStatus.PROGRESS, id);
-        closedReports.set("Reports." + id + ".Player", report.getPlayer());
-        closedReports.set("Reports." + id + ".Target", report.getTarget());
-        closedReports.set("Reports." + id + ".Reason", report.getReason());
-        closedReports.set("Reports." + id + ".Status", "Closed");
-        closedReports.set("Reports." + id + ".Member", report.getMember());
-        closedReports.set("Reports." + id + ".Date", report.getDate());
-        closedReports.save();
-        closedReports.reload();
-        deleteReport(id);
+        this.getReport(Report.ReportStatus.PROGRESS, id, report -> {
+            this.closedReports.set("Reports." + id + ".Player", report.getPlayer());
+            this.closedReports.set("Reports." + id + ".Target", report.getTarget());
+            this.closedReports.set("Reports." + id + ".Reason", report.getReason());
+            this.closedReports.set("Reports." + id + ".Status", "Closed");
+            this.closedReports.set("Reports." + id + ".Member", report.getMember());
+            this.closedReports.set("Reports." + id + ".Date", report.getDate());
+            this.closedReports.save();
+            this.closedReports.reload();
+            this.deleteReport(id);
+        });
     }
 
     @Override
     public void updateStatus(String id, String status) {
-        openedReports.set("Reports." + id + ".Status", status);
-        openedReports.save();
-        openedReports.reload();
+        this.openedReports.set("Reports." + id + ".Status", status);
+        this.openedReports.save();
+        this.openedReports.reload();
     }
 
     @Override
     public void updateStaffmember(String id, String s) {
-        openedReports.set("Reports." + id + ".Member", s);
-        openedReports.save();
-        openedReports.reload();
+        this.openedReports.set("Reports." + id + ".Member", s);
+        this.openedReports.save();
+        this.openedReports.reload();
     }
 
     @Override
-    public Report getReport(Report.ReportStatus status, String value) {
+    public void getReport(Report.ReportStatus status, String value, Consumer<Report> report) {
         switch (status) {
             case PENDING:
             case PROGRESS: {
-                String player = openedReports.getString("Reports." + value + ".Player");
-                String target = openedReports.getString("Reports." + value + ".Target");
-                String reason = openedReports.getString("Reports." + value + ".Reason");
-                String statusSet = openedReports.getString("Reports." + value + ".Status");
-                String member = openedReports.getString("Reports." + value + ".Member");
-                String date = openedReports.getString("Reports." + value + ".Date");
-                return new Report(player, target, reason, statusSet, member, value, date);
+                String player = this.openedReports.getString("Reports." + value + ".Player");
+                String target = this.openedReports.getString("Reports." + value + ".Target");
+                String reason = this.openedReports.getString("Reports." + value + ".Reason");
+                String statusSet = this.openedReports.getString("Reports." + value + ".Status");
+                String member = this.openedReports.getString("Reports." + value + ".Member");
+                String date = this.openedReports.getString("Reports." + value + ".Date");
+                report.accept(new Report(player, target, reason, statusSet, member, value, date));
             }
             case CLOSED: {
-                String player = closedReports.getString("Reports." + value + ".Player");
-                String target = closedReports.getString("Reports." + value + ".Target");
-                String reason = closedReports.getString("Reports." + value + ".Reason");
-                String statusSet = closedReports.getString("Reports." + value + ".Status");
-                String member = closedReports.getString("Reports." + value + ".Member");
-                String date = closedReports.getString("Reports." + value + ".Date");
-                return new Report(player, target, reason, statusSet, member, value, date);
+                String player = this.closedReports.getString("Reports." + value + ".Player");
+                String target = this.closedReports.getString("Reports." + value + ".Target");
+                String reason = this.closedReports.getString("Reports." + value + ".Reason");
+                String statusSet = this.closedReports.getString("Reports." + value + ".Status");
+                String member = this.closedReports.getString("Reports." + value + ".Member");
+                String date = this.closedReports.getString("Reports." + value + ".Date");
+                report.accept(new Report(player, target, reason, statusSet, member, value, date));
             }
         }
-        return null;
     }
 
     @Override
-    public List<Report> getReports(Report.ReportStatus status, Report.ReportSearch search, String value) {
-        List<Report> list = new ArrayList<>();
+    public void getReports(Report.ReportStatus status, Report.ReportSearch search, String value, Consumer<Set<Report>> reports) {
+        Set<Report> list = new HashSet<>();
         switch (search) {
             case PLAYER: {
                 switch (status) {
                     case PROGRESS: {
-                        for (String s : openedReports.getSection("Reports").getAll().getKeys(false)) {
-                            String playerSet = openedReports.getString("Reports." + s + ".Player");
-                            String statusSet = openedReports.getString("Reports." + s + ".Status");
+                        for (String s : this.openedReports.getSection("Reports").getAll().getKeys(false)) {
+                            String playerSet = this.openedReports.getString("Reports." + s + ".Player");
+                            String statusSet = this.openedReports.getString("Reports." + s + ".Status");
                             if (playerSet.equals(value) && statusSet.equals("Progress")) {
-                                String target = openedReports.getString("Reports." + s + ".Target");
-                                String reason = openedReports.getString("Reports." + s + ".Reason");
-                                String member = openedReports.getString("Reports." + s + ".Member");
-                                String date = openedReports.getString("Reports." + s + ".Date");
+                                String target = this.openedReports.getString("Reports." + s + ".Target");
+                                String reason = this.openedReports.getString("Reports." + s + ".Reason");
+                                String member = this.openedReports.getString("Reports." + s + ".Member");
+                                String date = this.openedReports.getString("Reports." + s + ".Date");
                                 Report report = new Report(playerSet, target, reason, statusSet, member, s, date);
                                 list.add(report);
                             }
@@ -146,14 +143,14 @@ public class YamlProvider extends Provider {
                     }
                     break;
                     case PENDING: {
-                        for (String s : openedReports.getSection("Reports").getAll().getKeys(false)) {
-                            String playerSet = openedReports.getString("Reports." + s + ".Player");
-                            String statusSet = openedReports.getString("Reports." + s + ".Status");
+                        for (String s : this.openedReports.getSection("Reports").getAll().getKeys(false)) {
+                            String playerSet = this.openedReports.getString("Reports." + s + ".Player");
+                            String statusSet = this.openedReports.getString("Reports." + s + ".Status");
                             if (playerSet.equals(value) && statusSet.equals("Pending")) {
-                                String target = openedReports.getString("Reports." + s + ".Target");
-                                String reason = openedReports.getString("Reports." + s + ".Reason");
-                                String member = openedReports.getString("Reports." + s + ".Member");
-                                String date = openedReports.getString("Reports." + s + ".Date");
+                                String target = this.openedReports.getString("Reports." + s + ".Target");
+                                String reason = this.openedReports.getString("Reports." + s + ".Reason");
+                                String member = this.openedReports.getString("Reports." + s + ".Member");
+                                String date = this.openedReports.getString("Reports." + s + ".Date");
                                 Report report = new Report(playerSet, target, reason, statusSet, member, s, date);
                                 list.add(report);
                             }
@@ -161,14 +158,14 @@ public class YamlProvider extends Provider {
                     }
                     break;
                     case CLOSED: {
-                        for (String s : closedReports.getSection("Reports").getAll().getKeys(false)) {
-                            String playerSet = closedReports.getString("Reports." + s + ".Player");
-                            String statusSet = closedReports.getString("Reports." + s + ".Status");
+                        for (String s : this.closedReports.getSection("Reports").getAll().getKeys(false)) {
+                            String playerSet = this.closedReports.getString("Reports." + s + ".Player");
+                            String statusSet = this.closedReports.getString("Reports." + s + ".Status");
                             if (playerSet.equals(value) && statusSet.equals("Closed")) {
-                                String target = closedReports.getString("Reports." + s + ".Target");
-                                String reason = closedReports.getString("Reports." + s + ".Reason");
-                                String member = closedReports.getString("Reports." + s + ".Member");
-                                String date = closedReports.getString("Reports." + s + ".Date");
+                                String target = this.closedReports.getString("Reports." + s + ".Target");
+                                String reason = this.closedReports.getString("Reports." + s + ".Reason");
+                                String member = this.closedReports.getString("Reports." + s + ".Member");
+                                String date = this.closedReports.getString("Reports." + s + ".Date");
                                 Report report = new Report(playerSet, target, reason, statusSet, member, s, date);
                                 list.add(report);
                             }
@@ -181,14 +178,14 @@ public class YamlProvider extends Provider {
             case TARGET: {
                 switch (status) {
                     case PROGRESS: {
-                        for (String s : openedReports.getSection("Reports").getAll().getKeys(false)) {
-                            String targetSet = openedReports.getString("Reports." + s + ".Target");
-                            String statusSet = openedReports.getString("Reports." + s + ".Status");
+                        for (String s : this.openedReports.getSection("Reports").getAll().getKeys(false)) {
+                            String targetSet = this.openedReports.getString("Reports." + s + ".Target");
+                            String statusSet = this.openedReports.getString("Reports." + s + ".Status");
                             if (targetSet.equals(value) && statusSet.equals("Progress")) {
-                                String player = openedReports.getString("Reports." + s + ".Player");
-                                String reason = openedReports.getString("Reports." + s + ".Reason");
-                                String member = openedReports.getString("Reports." + s + ".Member");
-                                String date = openedReports.getString("Reports." + s + ".Date");
+                                String player = this.openedReports.getString("Reports." + s + ".Player");
+                                String reason = this.openedReports.getString("Reports." + s + ".Reason");
+                                String member = this.openedReports.getString("Reports." + s + ".Member");
+                                String date = this.openedReports.getString("Reports." + s + ".Date");
                                 Report report = new Report(player, targetSet, reason, statusSet, member, s, date);
                                 list.add(report);
                             }
@@ -196,14 +193,14 @@ public class YamlProvider extends Provider {
                     }
                     break;
                     case PENDING: {
-                        for (String s : openedReports.getSection("Reports").getAll().getKeys(false)) {
-                            String targetSet = openedReports.getString("Reports." + s + ".Target");
-                            String statusSet = openedReports.getString("Reports." + s + ".Status");
+                        for (String s : this.openedReports.getSection("Reports").getAll().getKeys(false)) {
+                            String targetSet = this.openedReports.getString("Reports." + s + ".Target");
+                            String statusSet = this.openedReports.getString("Reports." + s + ".Status");
                             if (targetSet.equals(value) && statusSet.equals("Pending")) {
-                                String player = openedReports.getString("Reports." + s + ".Player");
-                                String reason = openedReports.getString("Reports." + s + ".Reason");
-                                String member = openedReports.getString("Reports." + s + ".Member");
-                                String date = openedReports.getString("Reports." + s + ".Date");
+                                String player = this.openedReports.getString("Reports." + s + ".Player");
+                                String reason = this.openedReports.getString("Reports." + s + ".Reason");
+                                String member = this.openedReports.getString("Reports." + s + ".Member");
+                                String date = this.openedReports.getString("Reports." + s + ".Date");
                                 Report report = new Report(player, targetSet, reason, statusSet, member, s, date);
                                 list.add(report);
                             }
@@ -211,14 +208,14 @@ public class YamlProvider extends Provider {
                     }
                     break;
                     case CLOSED: {
-                        for (String s : closedReports.getSection("Reports").getAll().getKeys(false)) {
-                            String targetSet = closedReports.getString("Reports." + s + ".Target");
-                            String statusSet = closedReports.getString("Reports." + s + ".Status");
+                        for (String s : this.closedReports.getSection("Reports").getAll().getKeys(false)) {
+                            String targetSet = this.closedReports.getString("Reports." + s + ".Target");
+                            String statusSet = this.closedReports.getString("Reports." + s + ".Status");
                             if (targetSet.equals(value) && statusSet.equals("Closed")) {
-                                String player = closedReports.getString("Reports." + s + ".Player");
-                                String reason = closedReports.getString("Reports." + s + ".Reason");
-                                String member = closedReports.getString("Reports." + s + ".Member");
-                                String date = closedReports.getString("Reports." + s + ".Date");
+                                String player = this.closedReports.getString("Reports." + s + ".Player");
+                                String reason = this.closedReports.getString("Reports." + s + ".Reason");
+                                String member = this.closedReports.getString("Reports." + s + ".Member");
+                                String date = this.closedReports.getString("Reports." + s + ".Date");
                                 Report report = new Report(player, targetSet, reason, statusSet, member, s, date);
                                 list.add(report);
                             }
@@ -232,14 +229,14 @@ public class YamlProvider extends Provider {
                 switch (status) {
                     case PENDING:
                     case PROGRESS: {
-                        for (String s : openedReports.getSection("Reports").getAll().getKeys(false)) {
-                            String memberSet = openedReports.getString("Reports." + s + ".Member");
-                            String statusSet = openedReports.getString("Reports." + s + ".Status");
+                        for (String s : this.openedReports.getSection("Reports").getAll().getKeys(false)) {
+                            String memberSet = this.openedReports.getString("Reports." + s + ".Member");
+                            String statusSet = this.openedReports.getString("Reports." + s + ".Status");
                             if (memberSet.equals(value) && statusSet.equals("Progress")) {
-                                String player = openedReports.getString("Reports." + s + ".Player");
-                                String target = openedReports.getString("Reports." + s + ".Target");
-                                String reason = openedReports.getString("Reports." + s + ".Reason");
-                                String date = openedReports.getString("Reports." + s + ".Date");
+                                String player = this.openedReports.getString("Reports." + s + ".Player");
+                                String target = this.openedReports.getString("Reports." + s + ".Target");
+                                String reason = this.openedReports.getString("Reports." + s + ".Reason");
+                                String date = this.openedReports.getString("Reports." + s + ".Date");
                                 Report report = new Report(player, target, reason, statusSet, memberSet, s, date);
                                 list.add(report);
                             }
@@ -247,14 +244,14 @@ public class YamlProvider extends Provider {
                     }
                     break;
                     case CLOSED: {
-                        for (String s : closedReports.getSection("Reports").getAll().getKeys(false)) {
-                            String memberSet = closedReports.getString("Reports." + s + ".Member");
-                            String statusSet = closedReports.getString("Reports." + s + ".Status");
+                        for (String s : this.closedReports.getSection("Reports").getAll().getKeys(false)) {
+                            String memberSet = this.closedReports.getString("Reports." + s + ".Member");
+                            String statusSet = this.closedReports.getString("Reports." + s + ".Status");
                             if (memberSet.equals(value) && statusSet.equals("Closed")) {
-                                String player = closedReports.getString("Reports." + s + ".Player");
-                                String target = closedReports.getString("Reports." + s + ".Target");
-                                String reason = closedReports.getString("Reports." + s + ".Reason");
-                                String date = closedReports.getString("Reports." + s + ".Date");
+                                String player = this.closedReports.getString("Reports." + s + ".Player");
+                                String target = this.closedReports.getString("Reports." + s + ".Target");
+                                String reason = this.closedReports.getString("Reports." + s + ".Reason");
+                                String date = this.closedReports.getString("Reports." + s + ".Date");
                                 Report report = new Report(player, target, reason, statusSet, memberSet, s, date);
                                 list.add(report);
                             }
@@ -265,22 +262,22 @@ public class YamlProvider extends Provider {
             }
             break;
         }
-        return list;
+        reports.accept(list);
     }
 
     @Override
-    public List<Report> getReports(Report.ReportStatus status) {
-        List<Report> list = new ArrayList<>();
+    public void getReports(Report.ReportStatus status, Consumer<Set<Report>> reports) {
+        Set<Report> list = new HashSet<>();
         switch (status) {
             case PROGRESS: {
-                for (String s : openedReports.getSection("Reports").getAll().getKeys(false)) {
-                    String statusSet = openedReports.getString("Reports." + s + ".Status");
+                for (String s : this.openedReports.getSection("Reports").getAll().getKeys(false)) {
+                    String statusSet = this.openedReports.getString("Reports." + s + ".Status");
                     if (statusSet.equals("Progress")) {
-                        String playerSet = openedReports.getString("Reports." + s + ".Player");
-                        String target = openedReports.getString("Reports." + s + ".Target");
-                        String reason = openedReports.getString("Reports." + s + ".Reason");
-                        String member = openedReports.getString("Reports." + s + ".Member");
-                        String date = openedReports.getString("Reports." + s + ".Date");
+                        String playerSet = this.openedReports.getString("Reports." + s + ".Player");
+                        String target = this.openedReports.getString("Reports." + s + ".Target");
+                        String reason = this.openedReports.getString("Reports." + s + ".Reason");
+                        String member = this.openedReports.getString("Reports." + s + ".Member");
+                        String date = this.openedReports.getString("Reports." + s + ".Date");
                         Report report = new Report(playerSet, target, reason, statusSet, member, s, date);
                         list.add(report);
                     }
@@ -288,14 +285,14 @@ public class YamlProvider extends Provider {
             }
             break;
             case PENDING: {
-                for (String s : openedReports.getSection("Reports").getAll().getKeys(false)) {
-                    String statusSet = openedReports.getString("Reports." + s + ".Status");
+                for (String s : this.openedReports.getSection("Reports").getAll().getKeys(false)) {
+                    String statusSet = this.openedReports.getString("Reports." + s + ".Status");
                     if (statusSet.equals("Pending")) {
-                        String playerSet = openedReports.getString("Reports." + s + ".Player");
-                        String target = openedReports.getString("Reports." + s + ".Target");
-                        String reason = openedReports.getString("Reports." + s + ".Reason");
-                        String member = openedReports.getString("Reports." + s + ".Member");
-                        String date = openedReports.getString("Reports." + s + ".Date");
+                        String playerSet = this.openedReports.getString("Reports." + s + ".Player");
+                        String target = this.openedReports.getString("Reports." + s + ".Target");
+                        String reason = this.openedReports.getString("Reports." + s + ".Reason");
+                        String member = this.openedReports.getString("Reports." + s + ".Member");
+                        String date = this.openedReports.getString("Reports." + s + ".Date");
                         Report report = new Report(playerSet, target, reason, statusSet, member, s, date);
                         list.add(report);
                     }
@@ -303,25 +300,26 @@ public class YamlProvider extends Provider {
             }
             break;
             case CLOSED: {
-                for (String s : closedReports.getSection("Reports").getAll().getKeys(false)) {
-                    String statusSet = closedReports.getString("Reports." + s + ".Status");
+                for (String s : this.closedReports.getSection("Reports").getAll().getKeys(false)) {
+                    String statusSet = this.closedReports.getString("Reports." + s + ".Status");
                     if (statusSet.equals("Closed")) {
-                        String playerSet = closedReports.getString("Reports." + s + ".Player");
-                        String target = closedReports.getString("Reports." + s + ".Target");
-                        String reason = closedReports.getString("Reports." + s + ".Reason");
-                        String member = closedReports.getString("Reports." + s + ".Member");
-                        String date = closedReports.getString("Reports." + s + ".Date");
+                        String playerSet = this.closedReports.getString("Reports." + s + ".Player");
+                        String target = this.closedReports.getString("Reports." + s + ".Target");
+                        String reason = this.closedReports.getString("Reports." + s + ".Reason");
+                        String member = this.closedReports.getString("Reports." + s + ".Member");
+                        String date = this.closedReports.getString("Reports." + s + ".Date");
                         Report report = new Report(playerSet, target, reason, statusSet, member, s, date);
                         list.add(report);
                     }
                 }
             }
         }
-        return list;
+        reports.accept(list);
     }
 
     @Override
     public String getProvider() {
         return "Yaml";
     }
+
 }
