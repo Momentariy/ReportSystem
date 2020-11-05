@@ -1,8 +1,13 @@
 package net.llamadevelopment.reportsystem.components.provider;
 
+import cn.nukkit.Server;
 import net.llamadevelopment.reportsystem.ReportSystem;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
+import net.llamadevelopment.reportsystem.components.event.ReportCloseEvent;
+import net.llamadevelopment.reportsystem.components.event.ReportPlayerEvent;
+import net.llamadevelopment.reportsystem.components.event.ReportUpdateStaffEvent;
+import net.llamadevelopment.reportsystem.components.event.ReportUpdateStatusEvent;
 import net.llamadevelopment.reportsystem.components.simplesqlclient.MySqlClient;
 import net.llamadevelopment.reportsystem.components.simplesqlclient.objects.SqlColumn;
 import net.llamadevelopment.reportsystem.components.simplesqlclient.objects.SqlDocument;
@@ -72,6 +77,7 @@ public class MySqlProvider extends Provider {
                     .append("member", "Unknown")
                     .append("id", id)
                     .append("date", date));
+            Server.getInstance().getPluginManager().callEvent(new ReportPlayerEvent(player, target, reason, "Pending", "Unknown", id, date));
         });
     }
 
@@ -116,25 +122,34 @@ public class MySqlProvider extends Provider {
     @Override
     public void closeReport(String id) {
         CompletableFuture.runAsync(() -> {
-            this.getReport(Report.ReportStatus.PROGRESS, id, report -> this.client.insert("closed_reports", new SqlDocument("player", report.getPlayer())
-                    .append("target", report.getTarget())
-                    .append("reason", report.getReason())
-                    .append("status", "Closed")
-                    .append("member", report.getMember())
-                    .append("id", report.getId())
-                    .append("date", report.getDate())));
-            this.deleteReport(id);
+            this.getReport(Report.ReportStatus.PROGRESS, id, report -> {
+                this.client.insert("closed_reports", new SqlDocument("player", report.getPlayer())
+                        .append("target", report.getTarget())
+                        .append("reason", report.getReason())
+                        .append("status", "Closed")
+                        .append("member", report.getMember())
+                        .append("id", report.getId())
+                        .append("date", report.getDate()));
+                this.deleteReport(id);
+                Server.getInstance().getPluginManager().callEvent(new ReportCloseEvent(report.getPlayer(), report.getTarget(), report.getReason(), "Closed", report.getMember(), report.getId(), report.getDate()));
+            });
         });
     }
 
     @Override
     public void updateStatus(String id, String status) {
-        CompletableFuture.runAsync(() -> this.client.update("opened_reports", new SqlDocument("id", id), new SqlDocument("status", status)));
+        CompletableFuture.runAsync(() -> {
+            this.client.update("opened_reports", new SqlDocument("id", id), new SqlDocument("status", status));
+            Server.getInstance().getPluginManager().callEvent(new ReportUpdateStatusEvent(id, status));
+        });
     }
 
     @Override
     public void updateStaffmember(String id, String s) {
-        CompletableFuture.runAsync(() -> this.client.update("opened_reports", new SqlDocument("id", id), new SqlDocument("member", s)));
+        CompletableFuture.runAsync(() -> {
+            this.client.update("opened_reports", new SqlDocument("id", id), new SqlDocument("member", s));
+            Server.getInstance().getPluginManager().callEvent(new ReportUpdateStaffEvent(id, s));
+        });
     }
 
     @Override

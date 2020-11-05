@@ -1,9 +1,14 @@
 package net.llamadevelopment.reportsystem.components.provider;
 
+import cn.nukkit.Server;
 import cn.nukkit.utils.Config;
 import net.llamadevelopment.reportsystem.ReportSystem;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
+import net.llamadevelopment.reportsystem.components.event.ReportCloseEvent;
+import net.llamadevelopment.reportsystem.components.event.ReportPlayerEvent;
+import net.llamadevelopment.reportsystem.components.event.ReportUpdateStaffEvent;
+import net.llamadevelopment.reportsystem.components.event.ReportUpdateStatusEvent;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -36,6 +41,7 @@ public class YamlProvider extends Provider {
         this.openedReports.set("Reports." + id + ".Date", date);
         this.openedReports.save();
         this.openedReports.reload();
+        Server.getInstance().getPluginManager().callEvent(new ReportPlayerEvent(player, target, reason, "Pending", "Unknown", id, date));
     }
 
     @Override
@@ -79,6 +85,7 @@ public class YamlProvider extends Provider {
             this.closedReports.save();
             this.closedReports.reload();
             this.deleteReport(id);
+            Server.getInstance().getPluginManager().callEvent(new ReportCloseEvent(report.getPlayer(), report.getTarget(), report.getReason(), "Closed", report.getMember(), report.getId(), report.getDate()));
         });
     }
 
@@ -87,6 +94,7 @@ public class YamlProvider extends Provider {
         this.openedReports.set("Reports." + id + ".Status", status);
         this.openedReports.save();
         this.openedReports.reload();
+        Server.getInstance().getPluginManager().callEvent(new ReportUpdateStatusEvent(id, status));
     }
 
     @Override
@@ -94,6 +102,7 @@ public class YamlProvider extends Provider {
         this.openedReports.set("Reports." + id + ".Member", s);
         this.openedReports.save();
         this.openedReports.reload();
+        Server.getInstance().getPluginManager().callEvent(new ReportUpdateStaffEvent(id, s));
     }
 
     @Override

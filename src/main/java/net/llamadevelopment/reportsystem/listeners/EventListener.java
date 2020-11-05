@@ -6,6 +6,7 @@ import cn.nukkit.event.Listener;
 import cn.nukkit.event.player.PlayerJoinEvent;
 import cn.nukkit.level.Sound;
 import net.llamadevelopment.reportsystem.ReportSystem;
+import net.llamadevelopment.reportsystem.commands.ReportmanagerCommand;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
 import net.llamadevelopment.reportsystem.components.language.Language;
@@ -21,7 +22,7 @@ public class EventListener implements Listener {
     @EventHandler
     public void on(PlayerJoinEvent event) {
         Server.getInstance().getScheduler().scheduleDelayedTask(ReportSystem.getInstance(), () -> {
-            if (event.getPlayer().hasPermission("reportsystem.command.reportmanager")) {
+            if (event.getPlayer().hasPermission(new ReportmanagerCommand(this.instance).getPermission())) {
                 this.instance.provider.getReports(Report.ReportStatus.PENDING, reports -> {
                     int pending = reports.size();
                     if (pending >= 1) {

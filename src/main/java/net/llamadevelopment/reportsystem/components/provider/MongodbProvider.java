@@ -1,5 +1,6 @@
 package net.llamadevelopment.reportsystem.components.provider;
 
+import cn.nukkit.Server;
 import com.mongodb.Block;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
@@ -8,6 +9,10 @@ import com.mongodb.client.MongoDatabase;
 import net.llamadevelopment.reportsystem.ReportSystem;
 import net.llamadevelopment.reportsystem.components.api.ReportSystemAPI;
 import net.llamadevelopment.reportsystem.components.data.Report;
+import net.llamadevelopment.reportsystem.components.event.ReportCloseEvent;
+import net.llamadevelopment.reportsystem.components.event.ReportPlayerEvent;
+import net.llamadevelopment.reportsystem.components.event.ReportUpdateStaffEvent;
+import net.llamadevelopment.reportsystem.components.event.ReportUpdateStatusEvent;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -53,6 +58,7 @@ public class MongodbProvider extends Provider {
                     .append("id", repID)
                     .append("date", date);
             this.openReports.insertOne(document);
+            Server.getInstance().getPluginManager().callEvent(new ReportPlayerEvent(player, target, reason, "Pending", "Unknown", repID, date));
         });
     }
 
@@ -102,6 +108,7 @@ public class MongodbProvider extends Provider {
                         .append("date", report.getDate());
                 this.closedReports.insertOne(document);
                 this.deleteReport(id);
+                Server.getInstance().getPluginManager().callEvent(new ReportCloseEvent(report.getPlayer(), report.getTarget(), report.getReason(), "Closed", report.getMember(), report.getId(), report.getDate()));
             });
         });
     }
@@ -115,6 +122,7 @@ public class MongodbProvider extends Provider {
             Bson newEntrySet = new Document("$set", newEntry);
             assert found != null;
             this.openReports.updateOne(found, newEntrySet);
+            Server.getInstance().getPluginManager().callEvent(new ReportUpdateStatusEvent(id, status));
         });
     }
 
@@ -127,6 +135,7 @@ public class MongodbProvider extends Provider {
             Bson newEntrySet = new Document("$set", newEntry);
             assert found != null;
             this.openReports.updateOne(found, newEntrySet);
+            Server.getInstance().getPluginManager().callEvent(new ReportUpdateStaffEvent(id, s));
         });
     }
 
