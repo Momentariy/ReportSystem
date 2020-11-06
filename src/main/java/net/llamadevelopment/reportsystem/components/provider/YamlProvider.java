@@ -55,22 +55,26 @@ public class YamlProvider extends Provider {
 
     @Override
     public void hasReported(String player, String target, Consumer<Boolean> hasReported) {
+        boolean b = false;
         for (String id : this.openedReports.getSection("Reports").getKeys(false)) {
-            if (this.openedReports.getString("Reports." + id + ".Target").equals(target) && this.openedReports.getString("Reports." + id + ".Player").equals(player) && this.openedReports.getString("Reports." + id + ".Status").equals("Pending")) hasReported.accept(true);
+            if (this.openedReports.getString("Reports." + id + ".Target").equals(target) && this.openedReports.getString("Reports." + id + ".Player").equals(player) && this.openedReports.getString("Reports." + id + ".Status").equals("Pending")) b = true;
         }
+        hasReported.accept(b);
     }
 
     @Override
     public void reportIDExists(String id, Report.ReportStatus status, Consumer<Boolean> exists) {
+        boolean b = false;
         switch (status) {
             case PENDING:
             case PROGRESS: {
-                exists.accept(this.openedReports.exists("Reports." + id));
+                if (this.openedReports.exists("Reports." + id)) b = true;
             }
             case CLOSED: {
-                exists.accept(this.closedReports.exists("Reports." + id));
+                if (this.closedReports.exists("Reports." + id)) b = true;
             }
         }
+        exists.accept(b);
     }
 
     @Override
@@ -107,6 +111,7 @@ public class YamlProvider extends Provider {
 
     @Override
     public void getReport(Report.ReportStatus status, String value, Consumer<Report> report) {
+        Report reportSet = null;
         switch (status) {
             case PENDING:
             case PROGRESS: {
@@ -116,7 +121,8 @@ public class YamlProvider extends Provider {
                 String statusSet = this.openedReports.getString("Reports." + value + ".Status");
                 String member = this.openedReports.getString("Reports." + value + ".Member");
                 String date = this.openedReports.getString("Reports." + value + ".Date");
-                report.accept(new Report(player, target, reason, statusSet, member, value, date));
+                reportSet = new Report(player, target, reason, statusSet, member, value, date);
+                break;
             }
             case CLOSED: {
                 String player = this.closedReports.getString("Reports." + value + ".Player");
@@ -125,9 +131,10 @@ public class YamlProvider extends Provider {
                 String statusSet = this.closedReports.getString("Reports." + value + ".Status");
                 String member = this.closedReports.getString("Reports." + value + ".Member");
                 String date = this.closedReports.getString("Reports." + value + ".Date");
-                report.accept(new Report(player, target, reason, statusSet, member, value, date));
+                reportSet = new Report(player, target, reason, statusSet, member, value, date);
             }
         }
+        report.accept(reportSet);
     }
 
     @Override

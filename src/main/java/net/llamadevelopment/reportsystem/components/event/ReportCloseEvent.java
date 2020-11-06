@@ -9,7 +9,7 @@ import lombok.Getter;
 @Getter
 public class ReportCloseEvent extends PlayerEvent {
 
-    private final String player;
+    private final String reportPlayer;
     private final String target;
     private final String reason;
     private final String status;

@@ -81,36 +81,36 @@ public class MongodbProvider extends Provider {
     @Override
     public void reportIDExists(String id, Report.ReportStatus status, Consumer<Boolean> exists) {
         CompletableFuture.runAsync(() -> {
+            boolean b = false;
             switch (status) {
                 case PENDING:
                 case PROGRESS: {
                     Document document = this.openReports.find(new Document("id", id)).first();
-                    exists.accept(document != null);
+                    if (document != null) b = true;
                 }
                 case CLOSED: {
                     Document document = this.closedReports.find(new Document("id", id)).first();
-                    exists.accept(document != null);
+                    if (document != null) b = true;
                 }
             }
+            exists.accept(b);
         });
     }
 
     @Override
     public void closeReport(String id) {
-        CompletableFuture.runAsync(() -> {
-            this.getReport(Report.ReportStatus.PROGRESS, id, report -> {
-                Document document = new Document("player", report.getPlayer())
-                        .append("target", report.getTarget())
-                        .append("reason", report.getReason())
-                        .append("status", "Closed")
-                        .append("member", report.getMember())
-                        .append("id", report.getId())
-                        .append("date", report.getDate());
-                this.closedReports.insertOne(document);
-                this.deleteReport(id);
-                Server.getInstance().getPluginManager().callEvent(new ReportCloseEvent(report.getPlayer(), report.getTarget(), report.getReason(), "Closed", report.getMember(), report.getId(), report.getDate()));
-            });
-        });
+        CompletableFuture.runAsync(() -> this.getReport(Report.ReportStatus.PROGRESS, id, report -> {
+            Document document = new Document("player", report.getPlayer())
+                    .append("target", report.getTarget())
+                    .append("reason", report.getReason())
+                    .append("status", "Closed")
+                    .append("member", report.getMember())
+                    .append("id", report.getId())
+                    .append("date", report.getDate());
+            this.closedReports.insertOne(document);
+            this.deleteReport(id);
+            Server.getInstance().getPluginManager().callEvent(new ReportCloseEvent(report.getPlayer(), report.getTarget(), report.getReason(), "Closed", report.getMember(), report.getId(), report.getDate()));
+        }));
     }
 
     @Override
@@ -142,6 +142,7 @@ public class MongodbProvider extends Provider {
     @Override
     public void getReport(Report.ReportStatus status, String value, Consumer<Report> report) {
         CompletableFuture.runAsync(() -> {
+            Report reportSet = null;
             switch (status) {
                 case PENDING:
                 case PROGRESS: {
@@ -153,7 +154,7 @@ public class MongodbProvider extends Provider {
                         String statusSet = document.getString("status");
                         String member = document.getString("member");
                         String date = document.getString("date");
-                        report.accept(new Report(player, target, reason, statusSet, member, value, date));
+                        reportSet = new Report(player, target, reason, statusSet, member, value, date);
                     }
                 }
                 break;
@@ -166,11 +167,12 @@ public class MongodbProvider extends Provider {
                         String statusSet = document.getString("status");
                         String member = document.getString("member");
                         String date = document.getString("date");
-                        report.accept(new Report(player, target, reason, statusSet, member, value, date));
+                        reportSet = new Report(player, target, reason, statusSet, member, value, date);
                     }
                 }
                 break;
             }
+            report.accept(reportSet);
         });
     }
 

@@ -28,9 +28,9 @@ public class FormWindows {
         this.instance.provider.getReports(Report.ReportStatus.PENDING, pending -> this.instance.provider.getReports(Report.ReportStatus.PROGRESS, Report.ReportSearch.MEMBER, player.getName(), progress -> {
             SimpleForm form = new SimpleForm.Builder(Language.getAndReplaceNP("manager-title"), Language.getAndReplaceNP("manager-content"))
                     .addButton(new ElementButton(Language.getAndReplaceNP("manager-pendingreports", pending.size()),
-                            new ElementButtonImageData("url", Language.getAndReplaceNP("manager-pendingreports-image"))), e -> this.sendPendingReports(player))
+                            new ElementButtonImageData("url", Language.getAndReplaceNP("manager-pendingreports-image"))), e -> this.sendPendingReports(player, pending))
                     .addButton(new ElementButton(Language.getAndReplaceNP("manager-myopenreports", progress.size()),
-                            new ElementButtonImageData("url", Language.getAndReplaceNP("manager-myopenreports-image"))), e -> this.sendMyProgressReports(player))
+                            new ElementButtonImageData("url", Language.getAndReplaceNP("manager-myopenreports-image"))), e -> this.sendMyProgressReports(player, progress))
                     .addButton(new ElementButton(Language.getAndReplaceNP("manager-searchplayers"),
                             new ElementButtonImageData("url", Language.getAndReplaceNP("manager-searchplayers-image"))), e -> this.sendSearchPlayer(player))
                     .addButton(new ElementButton(Language.getAndReplaceNP("manager-searchreport"),
@@ -41,17 +41,15 @@ public class FormWindows {
 
     }
 
-    public void sendPendingReports(Player player) {
+    public void sendPendingReports(Player player, Set<Report> reports) {
         SimpleForm.Builder pendingForm = new SimpleForm.Builder(Language.getAndReplaceNP("pending-title"), Language.getAndReplaceNP("pending-content"));
-        this.instance.provider.getReports(Report.ReportStatus.PENDING, reports -> {
-            reports.forEach(report -> pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("pending-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> sendPendingReportMenu(executor, report.getId())));
-        });
+        reports.forEach(report -> pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("pending-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> this.sendPendingReportMenu(executor, report.getId(), reports)));
         pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), e -> this.sendReportManager(player));
         SimpleForm form = pendingForm.build();
         form.send(player);
     }
 
-    public void sendPendingReportMenu(Player player, String id) {
+    public void sendPendingReportMenu(Player player, String id, Set<Report> reports) {
         this.instance.provider.getReport(Report.ReportStatus.PENDING, id, report -> {
             if (report != null) {
                 SimpleForm.Builder pendingReportForm = new SimpleForm.Builder(Language.getAndReplaceNP("pendingreport-title"),
@@ -64,7 +62,7 @@ public class FormWindows {
                         ReportSystemAPI.playSound(player, Sound.RANDOM_LEVELUP);
                     });
                 }
-                pendingReportForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), e -> this.sendPendingReports(player));
+                pendingReportForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), e -> this.sendPendingReports(player, reports));
                 SimpleForm form = pendingReportForm.build();
                 form.send(player);
             } else {
@@ -74,17 +72,15 @@ public class FormWindows {
         });
     }
 
-    public void sendMyProgressReports(Player player) {
+    public void sendMyProgressReports(Player player, Set<Report> reports) {
         SimpleForm.Builder pendingForm = new SimpleForm.Builder(Language.getAndReplaceNP("progress-title"), Language.getAndReplaceNP("progress-content"));
-        this.instance.provider.getReports(Report.ReportStatus.PROGRESS, Report.ReportSearch.MEMBER, player.getName(), reports -> {
-            reports.forEach(report -> pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("progress-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> sendProgressReportMenu(executor, report.getId())));
-        });
+        reports.forEach(report -> pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("progress-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> this.sendProgressReportMenu(executor, report.getId(), reports)));
         pendingForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), e -> this.sendReportManager(player));
         SimpleForm form = pendingForm.build();
         form.send(player);
     }
 
-    public void sendProgressReportMenu(Player player, String id) {
+    public void sendProgressReportMenu(Player player, String id, Set<Report> reports) {
         this.instance.provider.getReport(Report.ReportStatus.PROGRESS, id, report -> {
             if (report != null) {
                 SimpleForm.Builder pendingReportForm = new SimpleForm.Builder(Language.getAndReplaceNP("progressreport-title"),
@@ -101,7 +97,7 @@ public class FormWindows {
                         ReportSystemAPI.playSound(player, Sound.RANDOM_LEVELUP);
                     });
                 }
-                pendingReportForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), e -> this.sendMyProgressReports(player));
+                pendingReportForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), e -> this.sendMyProgressReports(player, reports));
                 SimpleForm form = pendingReportForm.build();
                 form.send(player);
             } else {
@@ -136,7 +132,7 @@ public class FormWindows {
                 return;
             }
             SimpleForm.Builder resultForm = new SimpleForm.Builder(Language.getAndReplaceNP("searchplayerresult-title"), Language.getAndReplaceNP("searchplayerresult-content"));
-            reports.forEach(report -> resultForm.addButton(new ElementButton(Language.getAndReplaceNP("searchplayerresult-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> sendSearchPlayerReport(executor, search, status, value, report.getId())));
+            reports.forEach(report -> resultForm.addButton(new ElementButton(Language.getAndReplaceNP("searchplayerresult-button", report.getTarget(), report.getPlayer(), report.getReason())), executor -> this.sendSearchPlayerReport(executor, search, status, value, report.getId())));
             resultForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), e -> this.sendReportManager(player));
             SimpleForm form = resultForm.build();
             form.send(player);
@@ -148,9 +144,10 @@ public class FormWindows {
             if (report != null) {
                 SimpleForm.Builder pendingReportForm = new SimpleForm.Builder(Language.getAndReplaceNP("searchplayerreport-title"),
                         Language.getAndReplaceNP("searchplayerreport-content", report.getPlayer(), report.getTarget(), report.getReason(), report.getStatus(), report.getMember(), report.getId(), report.getDate()));
-                pendingReportForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), (executor) -> sendSearchPlayerResult(player, search, status, value));
+                pendingReportForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), (executor) -> this.sendSearchPlayerResult(player, search, status, value));
                 SimpleForm form = pendingReportForm
-                        .onClose(executor -> {})
+                        .onClose(executor -> {
+                        })
                         .build();
                 form.send(player);
             } else {
@@ -191,7 +188,8 @@ public class FormWindows {
                             Language.getAndReplaceNP("searchreportreport-content", report.getPlayer(), report.getTarget(), report.getReason(), report.getStatus(), report.getMember(), report.getId(), report.getDate()));
                     pendingReportForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), e -> this.sendReportManager(player));
                     SimpleForm form = pendingReportForm
-                            .onClose(executor -> {})
+                            .onClose(executor -> {
+                            })
                             .build();
                     form.send(player);
                 } else {
@@ -204,9 +202,9 @@ public class FormWindows {
 
     public void sendMyreports(Player player, Set<Report> pending, Set<Report> progress, Set<Report> closed) {
         SimpleForm.Builder myreportsForm = new SimpleForm.Builder(Language.getAndReplaceNP("myreports-title"), Language.getAndReplaceNP("myreports-content"));
-        pending.forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> sendMyreportsReport(executor, Report.ReportStatus.PENDING, report.getId(), pending, progress, closed)));
-        progress.forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> sendMyreportsReport(executor, Report.ReportStatus.PROGRESS, report.getId(), pending, progress, closed)));
-        closed.forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> sendMyreportsReport(executor, Report.ReportStatus.CLOSED, report.getId(), pending, progress, closed)));
+        pending.forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> this.sendMyreportsReport(executor, Report.ReportStatus.PENDING, report.getId(), pending, progress, closed)));
+        progress.forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> this.sendMyreportsReport(executor, Report.ReportStatus.PROGRESS, report.getId(), pending, progress, closed)));
+        closed.forEach(report -> myreportsForm.addButton(new ElementButton(Language.getAndReplaceNP("myreports-button", report.getTarget(), report.getStatus())), executor -> this.sendMyreportsReport(executor, Report.ReportStatus.CLOSED, report.getId(), pending, progress, closed)));
         SimpleForm form = myreportsForm.build();
         form.send(player);
     }
@@ -218,7 +216,8 @@ public class FormWindows {
                         Language.getAndReplaceNP("myreportsreport-content", report.getPlayer(), report.getTarget(), report.getReason(), report.getStatus(), report.getMember(), report.getId(), report.getDate()));
                 pendingReportForm.addButton(new ElementButton(Language.getAndReplaceNP("back-button")), e -> this.sendMyreports(player, pending, progress, closed));
                 SimpleForm form = pendingReportForm
-                        .onClose(executor -> {})
+                        .onClose(executor -> {
+                        })
                         .build();
                 form.send(player);
             } else {

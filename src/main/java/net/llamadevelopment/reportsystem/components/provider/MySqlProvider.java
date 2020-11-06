@@ -90,32 +90,32 @@ public class MySqlProvider extends Provider {
     public void hasReported(String player, String target, Consumer<Boolean> hasReported) {
         CompletableFuture.runAsync(() -> {
             SqlDocument document = this.client.find("opened_reports", new SqlDocument("target", target)).first();
+            boolean b = false;
             if (document != null) {
-                if (document.getString("target").equals(target) && document.getString("player").equals(player) && document.getString("status").equals("Pending")) hasReported.accept(true);
+                if (document.getString("target").equals(target) && document.getString("player").equals(player) && document.getString("status").equals("Pending")) b = true;
             }
+            hasReported.accept(b);
         });
     }
 
     @Override
     public void reportIDExists(String id, Report.ReportStatus status, Consumer<Boolean> exists) {
         CompletableFuture.runAsync(() -> {
+            boolean b = false;
             switch (status) {
                 case PENDING:
                 case PROGRESS: {
                     SqlDocument document = this.client.find("opened_reports", new SqlDocument("id", id)).first();
-                    if (document != null) {
-                        exists.accept(document.getString("id") != null);
-                    }
+                    if (document != null) b = true;
                 }
                 break;
                 case CLOSED: {
                     SqlDocument document = this.client.find("closed_reports", new SqlDocument("id", id)).first();
-                    if (document != null) {
-                        exists.accept(document.getString("id") != null);
-                    }
+                    if (document != null) b = true;
                 }
                 break;
             }
+            exists.accept(b);
         });
     }
 
@@ -155,23 +155,25 @@ public class MySqlProvider extends Provider {
     @Override
     public void getReport(Report.ReportStatus status, String value, Consumer<Report> report) {
         CompletableFuture.runAsync(() -> {
+            Report reportSet = null;
             switch (status) {
                 case PENDING:
                 case PROGRESS: {
                     SqlDocument document = this.client.find("opened_reports", new SqlDocument("id", value)).first();
                     if (document != null) {
-                        report.accept(new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE")));
+                        reportSet = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                     }
                 }
                 break;
                 case CLOSED: {
                     SqlDocument document = this.client.find("closed_reports", new SqlDocument("id", value)).first();
                     if (document != null) {
-                        report.accept(new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE")));
+                        reportSet = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                     }
                 }
                 break;
             }
+            report.accept(reportSet);
         });
     }
 
@@ -186,7 +188,7 @@ public class MySqlProvider extends Provider {
                             SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("player", value));
                             documentSet.getAll().forEach(document -> {
                                 if (document.getString("status").equals("Progress")) {
-                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                                    Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                                     list.add(report);
                                 }
                             });
@@ -196,7 +198,7 @@ public class MySqlProvider extends Provider {
                             SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("player", value));
                             documentSet.getAll().forEach(document -> {
                                 if (document.getString("status").equals("Pending")) {
-                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                                    Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                                     list.add(report);
                                 }
                             });
@@ -206,7 +208,7 @@ public class MySqlProvider extends Provider {
                             SqlDocumentSet documentSet = this.client.find("closed_reports", new SqlDocument("player", value));
                             documentSet.getAll().forEach(document -> {
                                 if (document.getString("status").equals("Closed")) {
-                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                                    Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                                     list.add(report);
                                 }
                             });
@@ -221,7 +223,7 @@ public class MySqlProvider extends Provider {
                             SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("target", value));
                             documentSet.getAll().forEach(document -> {
                                 if (document.getString("status").equals("Progress")) {
-                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                                    Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                                     list.add(report);
                                 }
                             });
@@ -231,7 +233,7 @@ public class MySqlProvider extends Provider {
                             SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("target", value));
                             documentSet.getAll().forEach(document -> {
                                 if (document.getString("status").equals("Pending")) {
-                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                                    Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                                     list.add(report);
                                 }
                             });
@@ -241,7 +243,7 @@ public class MySqlProvider extends Provider {
                             SqlDocumentSet documentSet = this.client.find("closed_reports", new SqlDocument("target", value));
                             documentSet.getAll().forEach(document -> {
                                 if (document.getString("status").equals("Closed")) {
-                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                                    Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                                     list.add(report);
                                 }
                             });
@@ -257,7 +259,7 @@ public class MySqlProvider extends Provider {
                             SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("member", value));
                             documentSet.getAll().forEach(document -> {
                                 if (document.getString("status").equals("Progress")) {
-                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                                    Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                                     list.add(report);
                                 }
                             });
@@ -267,7 +269,7 @@ public class MySqlProvider extends Provider {
                             SqlDocumentSet documentSet = this.client.find("closed_reports", new SqlDocument("member", value));
                             documentSet.getAll().forEach(document -> {
                                 if (document.getString("status").equals("Closed")) {
-                                    Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                                    Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                                     list.add(report);
                                 }
                             });
@@ -289,7 +291,7 @@ public class MySqlProvider extends Provider {
                 case PROGRESS: {
                     SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("status", "Progress"));
                     documentSet.getAll().forEach(document -> {
-                        Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                        Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                         list.add(report);
                     });
                 }
@@ -297,7 +299,7 @@ public class MySqlProvider extends Provider {
                 case PENDING: {
                     SqlDocumentSet documentSet = this.client.find("opened_reports", new SqlDocument("status", "Pending"));
                     documentSet.getAll().forEach(document -> {
-                        Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                        Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                         list.add(report);
                     });
                 }
@@ -305,7 +307,7 @@ public class MySqlProvider extends Provider {
                 case CLOSED: {
                     SqlDocumentSet documentSet = this.client.find("closed_reports", new SqlDocument("status", "Closed"));
                     documentSet.getAll().forEach(document -> {
-                        Report report = new Report(document.getString("PLAYER"), document.getString("TARGET"), document.getString("REASON"), document.getString("STATUS"), document.getString("MEMBER"), document.getString("ID"), document.getString("DATE"));
+                        Report report = new Report(document.getString("player"), document.getString("target"), document.getString("reason"), document.getString("status"), document.getString("member"), document.getString("id"), document.getString("date"));
                         list.add(report);
                     });
                 }
