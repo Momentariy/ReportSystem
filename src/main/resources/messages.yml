@@ -1,4 +1,3 @@
-#Standard ui icons made by Smashicons from www.flaticon.com
 # - - - System messages - - -
 
 prefix: "&8» &4Report &8| &7"
@@ -17,19 +16,20 @@ invalid-input: "&cPlease provide valid data."
 no-reports-found: "&cCould not find any reports."
 
 # - - - Form UI - - -
+# If you want to use button images, please provide an image link like https://server.net/report.png or https://server.net/report.jpg
 
 back-button: "&8» &cBack"
 
 manager-title: "Report manager"
 manager-content: "Here you can manage all reports. Take a pending report and resolve it."
 manager-pendingreports: "&8» &9Pending reports &e[0]"
-manager-pendingreports-image: "https://image.flaticon.com/icons/png/512/148/148937.png"
+manager-pendingreports-image: ""
 manager-myopenreports: "&8» &bMy open reports &e[0]"
-manager-myopenreports-image: "https://image.flaticon.com/icons/png/512/148/148985.png"
+manager-myopenreports-image: ""
 manager-searchplayers: "&8» &ePlayer information"
-manager-searchplayers-image: "https://image.flaticon.com/icons/png/512/149/149020.png"
+manager-searchplayers-image: ""
 manager-searchreport: "&8» &6Search reports"
-manager-searchreport-image: "https://image.flaticon.com/icons/png/512/148/148848.png"
+manager-searchreport-image: ""
 
 pending-title: "Pending reports"
 pending-content: ""
@@ -38,7 +38,7 @@ pending-button: "&8» §e[0] \n&8[2]"
 pendingreport-title: "Report information"
 pendingreport-content: "&8» &9Report identification: &7[5]\n&8» &9Report created by: &7[0]\n&8» &9Reported player: &7[1]\n&8» &9Reason: &7[2]\n&8» &9Status: &7[3]\n&8» &9Member: &7[4]\n&8» &9Created at: &7[6]"
 pendingreport-take: "&8» &aTake report"
-pendingreport-take-image: "https://image.flaticon.com/icons/png/512/148/148767.png"
+pendingreport-take-image: ""
 
 progress-title: "Your pending reports"
 progress-content: ""
@@ -47,9 +47,9 @@ progress-button: "&8» §e[0] \n&8[2]"
 progressreport-title: "Report information"
 progressreport-content: "&8» &9Report identification: &7[5]\n&8» &9Report created by: &7[0]\n&8» &9Reported player: &7[1]\n&8» &9Reason: &7[2]\n&8» &9Status: &7[3]\n&8» &9Member: &7[4]\n&8» &9Created at: &7[6]"
 progressreport-close: "&8» &aClose report"
-progressreport-close-image: "https://image.flaticon.com/icons/png/512/148/148903.png"
+progressreport-close-image: ""
 progressreport-delete: "&8» &cDelete report"
-progressreport-delete-image: "https://image.flaticon.com/icons/png/512/148/148951.png"
+progressreport-delete-image: ""
 
 searchplayer-title: "Search a player"
 searchplayer-selectsearch: "Specify if you want to search for the player, target or report member."

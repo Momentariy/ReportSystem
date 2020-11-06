@@ -1,5 +1,6 @@
 # ReportSystem-Nukkit
-Download: https://nukkitx.com/resources/reportsystem.350/
+Download: https://cloudburstmc.org/resources/reportsystem.350/
+
 # Thanks to ZAP-Hosting!
 This project wouldn't be possible without the help of ZAP-Hosting!
 ***

@@ -15,4 +15,12 @@ public class Report {
     private final String id;
     private final String date;
 
+    public enum  ReportSearch {
+        PLAYER, TARGET, MEMBER
+    }
+
+    public enum ReportStatus {
+        PENDING, PROGRESS, CLOSED
+    }
+
 }
